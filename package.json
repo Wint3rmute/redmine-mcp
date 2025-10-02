@@ -35,6 +35,7 @@
     "@types/node": "^20.0.0",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsdoc": "^60.7.1",
     "globals": "^16.4.0",
     "jiti": "^2.6.1",
     "prettier": "^3.6.2",
