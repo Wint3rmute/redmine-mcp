@@ -1,0 +1,38 @@
+{
+  "name": "redmine-mcp-server",
+  "version": "0.1.0",
+  "description": "Model Context Protocol server for Redmine integration - project management, issue tracking, and time tracking",
+  "main": "build/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js",
+    "dev": "tsc --watch",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "redmine",
+    "project-management",
+    "issue-tracking",
+    "time-tracking"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "bin": {
+    "redmine-mcp-server": "./build/index.js"
+  },
+  "files": [
+    "build/**/*",
+    "README.md"
+  ]
+}
