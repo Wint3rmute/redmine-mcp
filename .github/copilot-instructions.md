@@ -9,12 +9,13 @@
 - [x] Scaffold the Project
 <!--
 Created complete MCP server project structure with:
-- package.json with proper dependencies (@modelcontextprotocol/sdk, axios, TypeScript)
+- package.json with proper dependencies (@modelcontextprotocol/sdk, axios,
+  TypeScript)
 - TypeScript configuration (tsconfig.json)
-- Main server implementation (src/index.ts) with comprehensive Redmine integration
+- Main server implementation (src/index.ts) with comprehensive Redmine
+  integration
 - Configuration files (.env.example, .gitignore, README.md)
-- VS Code MCP configuration (.vscode/mcp.json)
--->
+- VS Code MCP configuration (.vscode/mcp.json) -->
 
 - [x] Customize the Project
 <!--

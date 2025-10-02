@@ -11,110 +11,16 @@ import {
   GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import axios, { type AxiosInstance } from "axios";
-
-// Types for tool arguments
-interface GetIssuesArgs {
-  project_id?: string;
-  status_id?: string;
-  assigned_to_id?: string;
-  limit?: number;
-}
-
-interface GetProjectsArgs {
-  limit?: number;
-  name?: string;
-}
-
-interface CreateIssueArgs {
-  project_id: string;
-  subject: string;
-  description?: string;
-  priority_id?: number;
-  assigned_to_id?: number;
-}
-
-interface GetTimeEntriesArgs {
-  project_id?: string;
-  issue_id?: string;
-  user_id?: string;
-  from?: string;
-  to?: string;
-  limit?: number;
-}
-
-interface LogTimeArgs {
-  issue_id?: number;
-  project_id?: number;
-  hours: number;
-  comments?: string;
-  spent_on?: string;
-  activity_id?: number;
-}
-
-interface PromptArgs {
-  project_id?: string;
-  user_id?: string;
-  from_date?: string;
-  to_date?: string;
-}
-
-// Types for Redmine API responses
-export interface RedmineIssue {
-  id: number;
-  subject: string;
-  description?: string;
-  status: {
-    id: number;
-    name: string;
-  };
-  priority: {
-    id: number;
-    name: string;
-  };
-  project: {
-    id: number;
-    name: string;
-  };
-  assigned_to?: {
-    id: number;
-    name: string;
-  };
-  created_on: string;
-  updated_on: string;
-}
-
-export interface RedmineProject {
-  id: number;
-  name: string;
-  identifier: string;
-  description?: string;
-  status: number;
-  created_on: string;
-  updated_on: string;
-}
-
-export interface RedmineTimeEntry {
-  id: number;
-  hours: number;
-  comments: string;
-  spent_on: string;
-  issue?: {
-    id: number;
-    subject: string;
-  };
-  project: {
-    id: number;
-    name: string;
-  };
-  user: {
-    id: number;
-    name: string;
-  };
-  activity: {
-    id: number;
-    name: string;
-  };
-}
+import { config } from "./config/index.js";
+import type {
+  GetIssuesArgs,
+  GetProjectsArgs,
+  CreateIssueArgs,
+  GetTimeEntriesArgs,
+  LogTimeArgs,
+  PromptArgs,
+  RedmineProject,
+} from "./types/index.js";
 
 class RedmineMCPServer {
   private server: Server;
@@ -123,13 +29,9 @@ class RedmineMCPServer {
   private apiKey: string;
 
   constructor() {
-    // Get configuration from environment variables
-    this.baseUrl = process.env["REDMINE_URL"] || "";
-    this.apiKey = process.env["REDMINE_API_KEY"] || "";
-
-    if (!this.baseUrl || !this.apiKey) {
-      throw new Error("REDMINE_URL and REDMINE_API_KEY environment variables are required");
-    }
+    // Get configuration from validated config
+    this.baseUrl = config.redmine.url;
+    this.apiKey = config.redmine.apiKey;
 
     // Initialize API client
     this.apiClient = axios.create({
@@ -138,14 +40,14 @@ class RedmineMCPServer {
         "X-Redmine-API-Key": this.apiKey,
         "Content-Type": "application/json",
       },
-      timeout: 10000,
+      timeout: config.redmine.timeout,
     });
 
     // Initialize MCP server
     this.server = new Server(
       {
-        name: "redmine-mcp-server",
-        version: "0.1.0",
+        name: config.server.name,
+        version: config.server.version,
       },
       {
         capabilities: {
