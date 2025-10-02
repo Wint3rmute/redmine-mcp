@@ -12,6 +12,52 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import axios, { type AxiosInstance } from "axios";
 
+// Types for tool arguments
+interface GetIssuesArgs {
+  project_id?: string;
+  status_id?: string;
+  assigned_to_id?: string;
+  limit?: number;
+}
+
+interface GetProjectsArgs {
+  limit?: number;
+  name?: string;
+}
+
+interface CreateIssueArgs {
+  project_id: string;
+  subject: string;
+  description?: string;
+  priority_id?: number;
+  assigned_to_id?: number;
+}
+
+interface GetTimeEntriesArgs {
+  project_id?: string;
+  issue_id?: string;
+  user_id?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+}
+
+interface LogTimeArgs {
+  issue_id?: number;
+  project_id?: number;
+  hours: number;
+  comments?: string;
+  spent_on?: string;
+  activity_id?: number;
+}
+
+interface PromptArgs {
+  project_id?: string;
+  user_id?: string;
+  from_date?: string;
+  to_date?: string;
+}
+
 // Types for Redmine API responses
 export interface RedmineIssue {
   id: number;
@@ -278,17 +324,17 @@ class RedmineMCPServer {
 
       switch (name) {
         case "get_issues":
-          return await this.getIssues(args || {});
+          return await this.getIssues((args || {}) as GetIssuesArgs);
         case "get_projects":
-          return await this.getProjects(args || {});
+          return await this.getProjects((args || {}) as GetProjectsArgs);
         case "create_issue":
-          return await this.createIssue(args || {});
+          return await this.createIssue((args || {}) as unknown as CreateIssueArgs);
         case "get_time_entries":
-          return await this.getTimeEntries(args || {});
+          return await this.getTimeEntries((args || {}) as GetTimeEntriesArgs);
         case "log_time":
-          return await this.logTime(args || {});
+          return await this.logTime((args || {}) as unknown as LogTimeArgs);
         case "get_current_user":
-          return await this.getCurrentUser(args || {});
+          return await this.getCurrentUser();
         default:
           throw new Error(`Unknown tool: ${name}`);
       }
@@ -387,9 +433,9 @@ class RedmineMCPServer {
 
       switch (name) {
         case "issue_summary":
-          return this.getIssueSummaryPrompt(args || {});
+          return this.getIssueSummaryPrompt((args || {}) as PromptArgs);
         case "time_report":
-          return this.getTimeReportPrompt(args || {});
+          return this.getTimeReportPrompt((args || {}) as PromptArgs);
         default:
           throw new Error(`Unknown prompt: ${name}`);
       }
@@ -397,17 +443,17 @@ class RedmineMCPServer {
   }
 
   // Tool implementations
-  private async getIssues(args: any) {
+  private async getIssues(args: GetIssuesArgs): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
-      const params: any = {};
+      const params: Record<string, string | number> = {};
       
-      if (args?.project_id) params.project_id = args.project_id;
-      if (args?.status_id) params.status_id = args.status_id;
-      if (args?.assigned_to_id) params.assigned_to_id = args.assigned_to_id;
-      if (args?.limit) params.limit = args.limit;
+      if (args.project_id) params['project_id'] = args.project_id;
+      if (args.status_id) params['status_id'] = args.status_id;
+      if (args.assigned_to_id) params['assigned_to_id'] = args.assigned_to_id;
+      if (args.limit) params['limit'] = args.limit;
       
       // Sort by priority (descending) by default, then by updated date
-      params.sort = "priority:desc,updated_on:desc";
+      params['sort'] = "priority:desc,updated_on:desc";
 
       const response = await this.apiClient.get("/issues.json", { params });
       
@@ -425,27 +471,27 @@ class RedmineMCPServer {
     }
   }
 
-  private async getProjects(args: any) {
+  private async getProjects(args: GetProjectsArgs): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
-      const params: any = {};
-      if (args?.limit) params.limit = args.limit;
-      if (args?.name) params.name = args.name;
+      const params: Record<string, string | number> = {};
+      if (args.limit) params['limit'] = args.limit;
+      if (args.name) params['name'] = args.name;
 
       const response = await this.apiClient.get("/projects.json", { params });
       
       let projects = response.data.projects || [];
       
       // If name filter is provided and Redmine API doesn't support it, filter client-side
-      if (args?.name && projects.length > 0) {
+      if (args.name && projects.length > 0) {
         const searchTerm = args.name.toLowerCase();
-        projects = projects.filter((project: any) => 
+        projects = projects.filter((project: RedmineProject) => 
           project.name.toLowerCase().includes(searchTerm)
         );
       }
       
       // Create mapping from project name to ID
       const projectMapping: { [key: string]: number } = {};
-      projects.forEach((project: any) => {
+      projects.forEach((project: RedmineProject) => {
         projectMapping[project.name] = project.id;
       });
       
@@ -463,20 +509,20 @@ class RedmineMCPServer {
     }
   }
 
-  private async createIssue(args: any) {
+  private async createIssue(args: CreateIssueArgs): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
-      if (!args?.project_id || !args?.subject) {
+      if (!args.project_id || !args.subject) {
         throw new Error("project_id and subject are required");
       }
 
-      const issueData: any = {
+      const issueData: Record<string, string | number> = {
         project_id: args.project_id,
         subject: args.subject,
       };
 
-      if (args.description) issueData.description = args.description;
-      if (args.priority_id) issueData.priority_id = args.priority_id;
-      if (args.assigned_to_id) issueData.assigned_to_id = args.assigned_to_id;
+      if (args.description) issueData['description'] = args.description;
+      if (args.priority_id) issueData['priority_id'] = args.priority_id;
+      if (args.assigned_to_id) issueData['assigned_to_id'] = args.assigned_to_id;
 
       const response = await this.apiClient.post("/issues.json", {
         issue: issueData,
@@ -496,16 +542,16 @@ class RedmineMCPServer {
     }
   }
 
-  private async getTimeEntries(args: any) {
+  private async getTimeEntries(args: GetTimeEntriesArgs): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
-      const params: any = {};
+      const params: Record<string, string | number> = {};
       
-      if (args?.project_id) params.project_id = args.project_id;
-      if (args?.issue_id) params.issue_id = args.issue_id;
-      if (args?.user_id) params.user_id = args.user_id;
-      if (args?.from) params.from = args.from;
-      if (args?.to) params.to = args.to;
-      if (args?.limit) params.limit = args.limit;
+      if (args.project_id) params['project_id'] = args.project_id;
+      if (args.issue_id) params['issue_id'] = args.issue_id;
+      if (args.user_id) params['user_id'] = args.user_id;
+      if (args.from) params['from'] = args.from;
+      if (args.to) params['to'] = args.to;
+      if (args.limit) params['limit'] = args.limit;
 
       const response = await this.apiClient.get("/time_entries.json", { params });
       
@@ -523,23 +569,23 @@ class RedmineMCPServer {
     }
   }
 
-  private async logTime(args: any) {
+  private async logTime(args: LogTimeArgs): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
-      if (!args?.hours) {
+      if (!args.hours) {
         throw new Error("hours is required");
       }
 
-      const timeData: any = {
+      const timeData: Record<string, string | number> = {
         hours: args.hours,
       };
 
-      if (args.issue_id) timeData.issue_id = args.issue_id;
-      if (args.project_id) timeData.project_id = args.project_id;
-      if (args.comments) timeData.comments = args.comments;
-      if (args.spent_on) timeData.spent_on = args.spent_on;
-      if (args.activity_id) timeData.activity_id = args.activity_id;
+      if (args.issue_id) timeData['issue_id'] = args.issue_id;
+      if (args.project_id) timeData['project_id'] = args.project_id;
+      if (args.comments) timeData['comments'] = args.comments;
+      if (args.spent_on) timeData['spent_on'] = args.spent_on;
+      if (args.activity_id) timeData['activity_id'] = args.activity_id;
 
-      if (!timeData.issue_id && !timeData.project_id) {
+      if (!timeData['issue_id'] && !timeData['project_id']) {
         throw new Error("Either issue_id or project_id must be provided");
       }
 
@@ -561,7 +607,7 @@ class RedmineMCPServer {
     }
   }
 
-  private async getCurrentUser(_args: any) {
+  private async getCurrentUser(): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
       const response = await this.apiClient.get("/users/current.json");
       
@@ -641,8 +687,8 @@ class RedmineMCPServer {
   }
 
   // Prompt implementations
-  private getIssueSummaryPrompt(args: any) {
-    const projectId = args?.project_id;
+  private getIssueSummaryPrompt(args: PromptArgs): { description: string; messages: Array<{ role: "user"; content: { type: "text"; text: string } }> } {
+    const projectId = args.project_id;
     if (!projectId) {
       throw new Error("project_id is required for issue summary");
     }
@@ -670,11 +716,11 @@ Format the response in a clear, organized manner that would be useful for a proj
     };
   }
 
-  private getTimeReportPrompt(args: any) {
-    const projectId = args?.project_id;
-    const userId = args?.user_id;
-    const fromDate = args?.from_date;
-    const toDate = args?.to_date;
+  private getTimeReportPrompt(args: PromptArgs): { description: string; messages: Array<{ role: "user"; content: { type: "text"; text: string } }> } {
+    const projectId = args.project_id;
+    const userId = args.user_id;
+    const fromDate = args.from_date;
+    const toDate = args.to_date;
 
     let timeFilter = "";
     if (projectId) timeFilter += ` for project ID ${projectId}`;
