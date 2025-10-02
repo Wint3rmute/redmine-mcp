@@ -144,15 +144,30 @@ export type ToolArgs =
 
 /**
  * Type guard functions for runtime type checking
+ *
+ * @param args - Arguments to validate as GetIssuesArgs
+ * @returns True if args match GetIssuesArgs interface
  */
 export function isGetIssuesArgs(args: unknown): args is GetIssuesArgs {
   return typeof args === "object" && args !== null;
 }
 
+/**
+ * Validates arguments for getting projects
+ *
+ * @param args - Arguments to validate as GetProjectsArgs
+ * @returns True if args match GetProjectsArgs interface
+ */
 export function isGetProjectsArgs(args: unknown): args is GetProjectsArgs {
   return typeof args === "object" && args !== null;
 }
 
+/**
+ * Validates arguments for creating issues
+ *
+ * @param args - Arguments to validate as CreateIssueArgs
+ * @returns True if args match CreateIssueArgs interface
+ */
 export function isCreateIssueArgs(args: unknown): args is CreateIssueArgs {
   if (typeof args !== "object" || args === null) {
     return false;
@@ -162,6 +177,12 @@ export function isCreateIssueArgs(args: unknown): args is CreateIssueArgs {
   return typeof typed["project_id"] === "string" && typeof typed["subject"] === "string";
 }
 
+/**
+ * Validates arguments for updating issues
+ *
+ * @param args - Arguments to validate as UpdateIssueArgs
+ * @returns True if args match UpdateIssueArgs interface
+ */
 export function isUpdateIssueArgs(args: unknown): args is UpdateIssueArgs {
   if (typeof args !== "object" || args === null) {
     return false;
@@ -171,6 +192,12 @@ export function isUpdateIssueArgs(args: unknown): args is UpdateIssueArgs {
   return typeof typed["issue_id"] === "number" && typed["issue_id"] > 0;
 }
 
+/**
+ * Validates arguments for logging time entries
+ *
+ * @param args - Arguments to validate as LogTimeArgs
+ * @returns True if args match LogTimeArgs interface
+ */
 export function isLogTimeArgs(args: unknown): args is LogTimeArgs {
   if (typeof args !== "object" || args === null) {
     return false;
@@ -180,18 +207,42 @@ export function isLogTimeArgs(args: unknown): args is LogTimeArgs {
   return typeof typed["hours"] === "number" && typed["hours"] > 0;
 }
 
+/**
+ * Validates arguments for getting time entries
+ *
+ * @param args - Arguments to validate as GetTimeEntriesArgs
+ * @returns True if args match GetTimeEntriesArgs interface
+ */
 export function isGetTimeEntriesArgs(args: unknown): args is GetTimeEntriesArgs {
   return typeof args === "object" && args !== null;
 }
 
+/**
+ * Validates arguments for getting current user
+ *
+ * @param args - Arguments to validate as GetCurrentUserArgs
+ * @returns True if args match GetCurrentUserArgs interface
+ */
 export function isGetCurrentUserArgs(args: unknown): args is GetCurrentUserArgs {
   return typeof args === "object" && args !== null;
 }
 
+/**
+ * Validates arguments for prompt generation
+ *
+ * @param args - Arguments to validate as PromptArgs
+ * @returns True if args match PromptArgs interface
+ */
 export function isPromptArgs(args: unknown): args is PromptArgs {
   return typeof args === "object" && args !== null;
 }
 
+/**
+ * Validates arguments for getting issue by ID
+ *
+ * @param args - Arguments to validate as GetIssueByIdArgs
+ * @returns True if args match GetIssueByIdArgs interface
+ */
 export function isGetIssueByIdArgs(args: unknown): args is GetIssueByIdArgs {
   if (typeof args !== "object" || args === null) {
     return false;

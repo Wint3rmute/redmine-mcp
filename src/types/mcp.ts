@@ -99,7 +99,11 @@ export interface ToolExecutionContext {
 }
 
 /**
- * Helper type for creating successful tool responses
+ * Helper function for creating successful tool responses
+ *
+ * @param data - The response data to return
+ * @param metadata - Optional metadata to include with the response
+ * @returns Formatted successful tool response
  */
 export function createSuccessResponse<T = unknown>(
   data: T,
@@ -118,7 +122,11 @@ export function createSuccessResponse<T = unknown>(
 }
 
 /**
- * Helper type for creating error tool responses
+ * Helper function for creating error tool responses
+ *
+ * @param error - The error message or Error object
+ * @param metadata - Optional metadata to include with the error response
+ * @returns Formatted error tool response
  */
 export function createErrorResponse(
   error: string | Error,

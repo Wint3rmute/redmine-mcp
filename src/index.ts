@@ -24,12 +24,24 @@ import type {
   RedmineProject,
 } from "./types/index.js";
 
+/**
+ * Redmine MCP Server - Provides Model Context Protocol interface for Redmine API
+ *
+ * This class implements an MCP server that exposes Redmine functionality through
+ * standardized tools, resources, and prompts for AI assistants and other clients.
+ */
 class RedmineMCPServer {
   private server: Server;
   private apiClient: AxiosInstance;
   private baseUrl: string;
   private apiKey: string;
 
+  /**
+   * Creates a new RedmineMCPServer instance
+   *
+   * Initializes the MCP server with Redmine API configuration and sets up
+   * the HTTP client for making API requests.
+   */
   constructor() {
     // Get configuration from validated config
     this.baseUrl = config.redmine.url;
@@ -63,6 +75,14 @@ class RedmineMCPServer {
     this.setupHandlers();
   }
 
+  /**
+   * Sets up MCP protocol handlers for tools, resources, and prompts
+   *
+   * Configures the server to handle:
+   * - Tool execution (get_issues, create_issue, etc.)
+   * - Resource access (projects, recent issues, time entries)
+   * - Prompt responses (issue summaries, time reports)
+   */
   private setupHandlers(): void {
     // Handle list tools request
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -435,6 +455,19 @@ class RedmineMCPServer {
   }
 
   // Tool implementations
+
+  /**
+   * Retrieves issues from Redmine with optional filtering
+   *
+   * @param args - Filter parameters for issues query
+   * @param args.project_id - Project ID to filter by
+   * @param args.status_id - Status ID to filter by ('open', 'closed', or specific ID)
+   * @param args.assigned_to_id - User ID to filter issues assigned to specific user
+   * @param args.limit - Maximum number of issues to return
+   * @param args.issue_id - Single issue ID or comma-separated list of issue IDs
+   * @param args.subject - Search text in issue subject/title
+   * @returns Promise resolving to formatted issue data
+   */
   private async getIssues(
     args: GetIssuesArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
@@ -467,6 +500,13 @@ class RedmineMCPServer {
     }
   }
 
+  /**
+   * Retrieves a specific issue by its ID from Redmine
+   *
+   * @param args - Issue lookup parameters
+   * @param args.issue_id - The ID of the issue to retrieve
+   * @returns Promise resolving to formatted issue data
+   */
   private async getIssueById(
     args: GetIssueByIdArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
@@ -487,6 +527,14 @@ class RedmineMCPServer {
     }
   }
 
+  /**
+   * Retrieves projects from Redmine with optional filtering
+   *
+   * @param args - Filter parameters for projects query
+   * @param args.limit - Maximum number of projects to return (default: 100)
+   * @param args.name - Search for projects containing this name (case-insensitive)
+   * @returns Promise resolving to formatted project data with ID mappings
+   */
   private async getProjects(
     args: GetProjectsArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
@@ -527,6 +575,17 @@ class RedmineMCPServer {
     }
   }
 
+  /**
+   * Creates a new issue in Redmine
+   *
+   * @param args - Issue creation parameters
+   * @param args.project_id - Project ID where to create the issue (required)
+   * @param args.subject - Issue subject/title (required)
+   * @param args.description - Issue description
+   * @param args.assigned_to_id - User ID to assign the issue to
+   * @param args.priority_id - Priority ID for the issue
+   * @returns Promise resolving to created issue data
+   */
   private async createIssue(
     args: CreateIssueArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
@@ -562,6 +621,21 @@ class RedmineMCPServer {
     }
   }
 
+  /**
+   * Updates an existing issue in Redmine
+   *
+   * @param args - Issue update parameters
+   * @param args.issue_id - ID of the issue to update (required)
+   * @param args.subject - New issue subject/title
+   * @param args.description - New issue description
+   * @param args.assigned_to_id - New assignee user ID
+   * @param args.status_id - New status ID
+   * @param args.priority_id - New priority ID
+   * @param args.done_ratio - Completion percentage (0-100)
+   * @param args.due_date - Due date in YYYY-MM-DD format
+   * @param args.notes - Notes to add to the issue history
+   * @returns Promise resolving to success confirmation
+   */
   private async updateIssue(
     args: UpdateIssueArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
@@ -606,6 +680,18 @@ class RedmineMCPServer {
     }
   }
 
+  /**
+   * Retrieves time entries from Redmine with optional filtering
+   *
+   * @param args - Filter parameters for time entries query
+   * @param args.project_id - Project ID to filter time entries by
+   * @param args.issue_id - Issue ID to filter time entries by
+   * @param args.user_id - User ID to filter time entries by
+   * @param args.from - Start date (YYYY-MM-DD format)
+   * @param args.to - End date (YYYY-MM-DD format)
+   * @param args.limit - Maximum number of time entries to return
+   * @returns Promise resolving to formatted time entries data
+   */
   private async getTimeEntries(
     args: GetTimeEntriesArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
@@ -635,6 +721,13 @@ class RedmineMCPServer {
     }
   }
 
+  /**
+   * Retrieves available time tracking activities for a project or globally
+   *
+   * @param args - Activity lookup parameters
+   * @param args.project_id - Project ID to get project-specific activities (optional)
+   * @returns Promise resolving to available time tracking activities
+   */
   private async getTimeActivities(args: {
     project_id?: number;
   }): Promise<{ content: Array<{ type: "text"; text: string }> }> {
@@ -692,6 +785,18 @@ class RedmineMCPServer {
     }
   }
 
+  /**
+   * Logs time spent on an issue or project in Redmine
+   *
+   * @param args - Time logging parameters
+   * @param args.hours - Hours to log (required)
+   * @param args.activity_id - Activity ID for the time entry (required)
+   * @param args.issue_id - Issue ID to log time against
+   * @param args.project_id - Project ID to log time against
+   * @param args.comments - Comments for the time entry
+   * @param args.spent_on - Date when time was spent (YYYY-MM-DD format)
+   * @returns Promise resolving to time entry creation confirmation
+   */
   private async logTime(
     args: LogTimeArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
@@ -738,6 +843,11 @@ class RedmineMCPServer {
     }
   }
 
+  /**
+   * Retrieves information about the current user based on API token
+   *
+   * @returns Promise resolving to current user information
+   */
   private async getCurrentUser(): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
       const response = await this.apiClient.get("/users/current.json");
@@ -757,6 +867,11 @@ class RedmineMCPServer {
   }
 
   // Resource implementations
+  /**
+   * Retrieves projects resource for MCP resource access
+   *
+   * @returns Promise resolving to projects resource data
+   */
   private async getProjectsResource() {
     try {
       const response = await this.apiClient.get("/projects.json");
@@ -774,6 +889,11 @@ class RedmineMCPServer {
     }
   }
 
+  /**
+   * Retrieves recent issues resource for MCP resource access
+   *
+   * @returns Promise resolving to recent issues resource data (last 10 updated)
+   */
   private async getRecentIssuesResource() {
     try {
       const response = await this.apiClient.get("/issues.json", {
@@ -796,6 +916,11 @@ class RedmineMCPServer {
     }
   }
 
+  /**
+   * Retrieves recent time entries resource for MCP resource access
+   *
+   * @returns Promise resolving to recent time entries resource data (last 10 entries)
+   */
   private async getRecentTimeEntriesResource() {
     try {
       const response = await this.apiClient.get("/time_entries.json", {
@@ -818,6 +943,13 @@ class RedmineMCPServer {
   }
 
   // Prompt implementations
+  /**
+   * Generates issue summary prompt for AI assistants
+   *
+   * @param args - Prompt parameters
+   * @param args.project_id - Project ID to generate summary for (required)
+   * @returns Formatted prompt for issue summarization
+   */
   private getIssueSummaryPrompt(args: PromptArgs): {
     description: string;
     messages: Array<{ role: "user"; content: { type: "text"; text: string } }>;
@@ -850,6 +982,16 @@ Format the response in a clear, organized manner that would be useful for a proj
     };
   }
 
+  /**
+   * Generates time report prompt for AI assistants
+   *
+   * @param args - Prompt parameters
+   * @param args.project_id - Project ID to generate report for
+   * @param args.user_id - User ID to filter time entries by
+   * @param args.from_date - Start date for time report
+   * @param args.to_date - End date for time report
+   * @returns Formatted prompt for time reporting
+   */
   private getTimeReportPrompt(args: PromptArgs): {
     description: string;
     messages: Array<{ role: "user"; content: { type: "text"; text: string } }>;
@@ -896,6 +1038,11 @@ Format the report in a professional manner suitable for time tracking review or 
     };
   }
 
+  /**
+   * Starts the MCP server and connects to stdio transport
+   *
+   * @returns Promise that resolves when server is running
+   */
   async run(): Promise<void> {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
@@ -904,6 +1051,11 @@ Format the report in a professional manner suitable for time tracking review or 
 }
 
 // Main execution
+/**
+ * Main entry point - creates and starts the Redmine MCP server
+ *
+ * @returns Promise that resolves when server starts successfully
+ */
 async function main(): Promise<void> {
   try {
     const server = new RedmineMCPServer();

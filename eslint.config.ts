@@ -7,7 +7,7 @@ import { defineConfig } from "eslint/config";
 export default defineConfig([
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
-    plugins: { 
+    plugins: {
       js,
       jsdoc,
     },
@@ -15,35 +15,41 @@ export default defineConfig([
     languageOptions: { globals: globals.browser },
     rules: {
       // JSDoc rules for documentation requirements
-      "jsdoc/require-jsdoc": ["error", {
-        require: {
-          FunctionDeclaration: true,
-          MethodDefinition: true,
-          ClassDeclaration: true,
-          ArrowFunctionExpression: false, // Optional for arrow functions
-          FunctionExpression: true,
+      "jsdoc/require-jsdoc": [
+        "error",
+        {
+          require: {
+            FunctionDeclaration: true,
+            MethodDefinition: true,
+            ClassDeclaration: true,
+            ArrowFunctionExpression: false, // Optional for arrow functions
+            FunctionExpression: true,
+          },
+          contexts: [
+            // Require JSDoc for exported functions
+            "ExportNamedDeclaration > FunctionDeclaration",
+            "ExportDefaultDeclaration > FunctionDeclaration",
+            // Require JSDoc for class methods (public ones)
+            "MethodDefinition[accessibility='public']",
+            "MethodDefinition:not([accessibility])", // Default is public
+          ],
         },
-        contexts: [
-          // Require JSDoc for exported functions
-          "ExportNamedDeclaration > FunctionDeclaration",
-          "ExportDefaultDeclaration > FunctionDeclaration",
-          // Require JSDoc for class methods (public ones)
-          "MethodDefinition[accessibility='public']",
-          "MethodDefinition:not([accessibility])", // Default is public
-        ]
-      }],
+      ],
       "jsdoc/require-description": "error",
-      "jsdoc/require-param-description": "error", 
+      "jsdoc/require-param-description": "error",
       "jsdoc/require-returns-description": "error",
       "jsdoc/require-param": "error",
-      "jsdoc/require-returns": ["error", {
-        forceRequireReturn: false,
-        forceReturnsWithAsync: false
-      }],
+      "jsdoc/require-returns": [
+        "error",
+        {
+          forceRequireReturn: false,
+          forceReturnsWithAsync: false,
+        },
+      ],
       "jsdoc/check-param-names": "error",
       "jsdoc/check-types": "error",
       "jsdoc/valid-types": "error",
-    }
+    },
   },
   tseslint.configs.recommended,
 ]);

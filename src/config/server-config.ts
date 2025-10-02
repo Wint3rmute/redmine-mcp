@@ -27,6 +27,13 @@ export interface ConfigValidationError {
 export class ConfigValidator {
   private static errors: ConfigValidationError[] = [];
 
+  /**
+   * Validates environment variables and returns server configuration
+   *
+   * @param envVars - Environment variables object to validate
+   * @returns Validated server configuration object
+   * @throws {Error} When required environment variables are missing or invalid
+   */
   static validate(envVars: Record<string, string | undefined>): ServerConfig {
     this.errors = [];
 
@@ -52,6 +59,12 @@ export class ConfigValidator {
     };
   }
 
+  /**
+   * Validates that a required environment variable has a non-empty value.
+   * @param value - The environment variable value to validate
+   * @param fieldName - The name of the environment variable field for error reporting
+   * @returns The trimmed value if valid, empty string if invalid
+   */
   private static validateRequired(value: string | undefined, fieldName: string): string {
     if (!value || value.trim() === "") {
       this.errors.push({
@@ -63,6 +76,11 @@ export class ConfigValidator {
     return value.trim();
   }
 
+  /**
+   * Parses and validates the timeout value from environment variable.
+   * @param value - The timeout value as a string from environment variables
+   * @returns The parsed timeout in milliseconds, or default 10000ms if invalid
+   */
   private static parseTimeout(value: string | undefined): number {
     const defaultTimeout = 10000;
 
@@ -82,6 +100,11 @@ export class ConfigValidator {
     return parsed;
   }
 
+  /**
+   * Normalizes and validates a URL by removing trailing slashes and checking format.
+   * @param url - The URL string to normalize and validate
+   * @returns The normalized URL if valid, or original URL if invalid (with error logged)
+   */
   private static normalizeUrl(url: string): string {
     if (!url) {
       return "";
