@@ -124,9 +124,9 @@ class RedmineMCPServer {
 
   constructor() {
     // Get configuration from environment variables
-    this.baseUrl = process.env['REDMINE_URL'] || "";
-    this.apiKey = process.env['REDMINE_API_KEY'] || "";
-    
+    this.baseUrl = process.env["REDMINE_URL"] || "";
+    this.apiKey = process.env["REDMINE_API_KEY"] || "";
+
     if (!this.baseUrl || !this.apiKey) {
       throw new Error("REDMINE_URL and REDMINE_API_KEY environment variables are required");
     }
@@ -153,7 +153,7 @@ class RedmineMCPServer {
           resources: {},
           prompts: {},
         },
-      }
+      },
     );
 
     this.setupHandlers();
@@ -175,8 +175,9 @@ class RedmineMCPServer {
                   description: "Project ID or identifier to filter issues",
                 },
                 status_id: {
-                  type: "string", 
-                  description: "Status ID to filter issues (e.g., 'open', 'closed', or specific ID)",
+                  type: "string",
+                  description:
+                    "Status ID to filter issues (e.g., 'open', 'closed', or specific ID)",
                 },
                 assigned_to_id: {
                   type: "string",
@@ -191,23 +192,23 @@ class RedmineMCPServer {
             },
           },
           {
-        name: "get_projects",
-        description: "Get mapping of project names to their IDs from Redmine",
-        inputSchema: {
-          type: "object",
-          properties: {
-            limit: {
-              type: "number",
-              description: "Maximum number of projects to return",
-              default: 100,
-            },
-            name: {
-              type: "string",
-              description: "Search for projects containing this name (case-insensitive)",
+            name: "get_projects",
+            description: "Get mapping of project names to their IDs from Redmine",
+            inputSchema: {
+              type: "object",
+              properties: {
+                limit: {
+                  type: "number",
+                  description: "Maximum number of projects to return",
+                  default: 100,
+                },
+                name: {
+                  type: "string",
+                  description: "Search for projects containing this name (case-insensitive)",
+                },
+              },
             },
           },
-        },
-      },
           {
             name: "create_issue",
             description: "Create a new issue in Redmine",
@@ -319,7 +320,7 @@ class RedmineMCPServer {
     });
 
     // Handle call tool request
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async request => {
       const { name, arguments: args } = request.params;
 
       switch (name) {
@@ -346,7 +347,7 @@ class RedmineMCPServer {
         resources: [
           {
             uri: "redmine://projects",
-            name: "Projects List", 
+            name: "Projects List",
             description: "List of all accessible Redmine projects",
             mimeType: "application/json",
           },
@@ -367,7 +368,7 @@ class RedmineMCPServer {
     });
 
     // Handle read resource request
-    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    this.server.setRequestHandler(ReadResourceRequestSchema, async request => {
       const { uri } = request.params;
 
       switch (uri) {
@@ -398,7 +399,7 @@ class RedmineMCPServer {
             ],
           },
           {
-            name: "time_report", 
+            name: "time_report",
             description: "Generate a time tracking report",
             arguments: [
               {
@@ -408,7 +409,7 @@ class RedmineMCPServer {
               },
               {
                 name: "user_id",
-                description: "User ID for the report", 
+                description: "User ID for the report",
                 required: false,
               },
               {
@@ -428,7 +429,7 @@ class RedmineMCPServer {
     });
 
     // Handle get prompt request
-    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+    this.server.setRequestHandler(GetPromptRequestSchema, async request => {
       const { name, arguments: args } = request.params;
 
       switch (name) {
@@ -443,20 +444,22 @@ class RedmineMCPServer {
   }
 
   // Tool implementations
-  private async getIssues(args: GetIssuesArgs): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  private async getIssues(
+    args: GetIssuesArgs,
+  ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
       const params: Record<string, string | number> = {};
-      
-      if (args.project_id) params['project_id'] = args.project_id;
-      if (args.status_id) params['status_id'] = args.status_id;
-      if (args.assigned_to_id) params['assigned_to_id'] = args.assigned_to_id;
-      if (args.limit) params['limit'] = args.limit;
-      
+
+      if (args.project_id) params["project_id"] = args.project_id;
+      if (args.status_id) params["status_id"] = args.status_id;
+      if (args.assigned_to_id) params["assigned_to_id"] = args.assigned_to_id;
+      if (args.limit) params["limit"] = args.limit;
+
       // Sort by priority (descending) by default, then by updated date
-      params['sort'] = "priority:desc,updated_on:desc";
+      params["sort"] = "priority:desc,updated_on:desc";
 
       const response = await this.apiClient.get("/issues.json", { params });
-      
+
       return {
         content: [
           {
@@ -471,30 +474,32 @@ class RedmineMCPServer {
     }
   }
 
-  private async getProjects(args: GetProjectsArgs): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  private async getProjects(
+    args: GetProjectsArgs,
+  ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
       const params: Record<string, string | number> = {};
-      if (args.limit) params['limit'] = args.limit;
-      if (args.name) params['name'] = args.name;
+      if (args.limit) params["limit"] = args.limit;
+      if (args.name) params["name"] = args.name;
 
       const response = await this.apiClient.get("/projects.json", { params });
-      
+
       let projects = response.data.projects || [];
-      
+
       // If name filter is provided and Redmine API doesn't support it, filter client-side
       if (args.name && projects.length > 0) {
         const searchTerm = args.name.toLowerCase();
-        projects = projects.filter((project: RedmineProject) => 
-          project.name.toLowerCase().includes(searchTerm)
+        projects = projects.filter((project: RedmineProject) =>
+          project.name.toLowerCase().includes(searchTerm),
         );
       }
-      
+
       // Create mapping from project name to ID
       const projectMapping: { [key: string]: number } = {};
       projects.forEach((project: RedmineProject) => {
         projectMapping[project.name] = project.id;
       });
-      
+
       return {
         content: [
           {
@@ -509,7 +514,9 @@ class RedmineMCPServer {
     }
   }
 
-  private async createIssue(args: CreateIssueArgs): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  private async createIssue(
+    args: CreateIssueArgs,
+  ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
       if (!args.project_id || !args.subject) {
         throw new Error("project_id and subject are required");
@@ -520,14 +527,14 @@ class RedmineMCPServer {
         subject: args.subject,
       };
 
-      if (args.description) issueData['description'] = args.description;
-      if (args.priority_id) issueData['priority_id'] = args.priority_id;
-      if (args.assigned_to_id) issueData['assigned_to_id'] = args.assigned_to_id;
+      if (args.description) issueData["description"] = args.description;
+      if (args.priority_id) issueData["priority_id"] = args.priority_id;
+      if (args.assigned_to_id) issueData["assigned_to_id"] = args.assigned_to_id;
 
       const response = await this.apiClient.post("/issues.json", {
         issue: issueData,
       });
-      
+
       return {
         content: [
           {
@@ -542,19 +549,21 @@ class RedmineMCPServer {
     }
   }
 
-  private async getTimeEntries(args: GetTimeEntriesArgs): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  private async getTimeEntries(
+    args: GetTimeEntriesArgs,
+  ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
       const params: Record<string, string | number> = {};
-      
-      if (args.project_id) params['project_id'] = args.project_id;
-      if (args.issue_id) params['issue_id'] = args.issue_id;
-      if (args.user_id) params['user_id'] = args.user_id;
-      if (args.from) params['from'] = args.from;
-      if (args.to) params['to'] = args.to;
-      if (args.limit) params['limit'] = args.limit;
+
+      if (args.project_id) params["project_id"] = args.project_id;
+      if (args.issue_id) params["issue_id"] = args.issue_id;
+      if (args.user_id) params["user_id"] = args.user_id;
+      if (args.from) params["from"] = args.from;
+      if (args.to) params["to"] = args.to;
+      if (args.limit) params["limit"] = args.limit;
 
       const response = await this.apiClient.get("/time_entries.json", { params });
-      
+
       return {
         content: [
           {
@@ -569,7 +578,9 @@ class RedmineMCPServer {
     }
   }
 
-  private async logTime(args: LogTimeArgs): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  private async logTime(
+    args: LogTimeArgs,
+  ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
       if (!args.hours) {
         throw new Error("hours is required");
@@ -579,20 +590,20 @@ class RedmineMCPServer {
         hours: args.hours,
       };
 
-      if (args.issue_id) timeData['issue_id'] = args.issue_id;
-      if (args.project_id) timeData['project_id'] = args.project_id;
-      if (args.comments) timeData['comments'] = args.comments;
-      if (args.spent_on) timeData['spent_on'] = args.spent_on;
-      if (args.activity_id) timeData['activity_id'] = args.activity_id;
+      if (args.issue_id) timeData["issue_id"] = args.issue_id;
+      if (args.project_id) timeData["project_id"] = args.project_id;
+      if (args.comments) timeData["comments"] = args.comments;
+      if (args.spent_on) timeData["spent_on"] = args.spent_on;
+      if (args.activity_id) timeData["activity_id"] = args.activity_id;
 
-      if (!timeData['issue_id'] && !timeData['project_id']) {
+      if (!timeData["issue_id"] && !timeData["project_id"]) {
         throw new Error("Either issue_id or project_id must be provided");
       }
 
       const response = await this.apiClient.post("/time_entries.json", {
         time_entry: timeData,
       });
-      
+
       return {
         content: [
           {
@@ -610,7 +621,7 @@ class RedmineMCPServer {
   private async getCurrentUser(): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
       const response = await this.apiClient.get("/users/current.json");
-      
+
       return {
         content: [
           {
@@ -646,7 +657,7 @@ class RedmineMCPServer {
   private async getRecentIssuesResource() {
     try {
       const response = await this.apiClient.get("/issues.json", {
-        params: { 
+        params: {
           sort: "updated_on:desc",
           limit: 10,
         },
@@ -668,7 +679,7 @@ class RedmineMCPServer {
   private async getRecentTimeEntriesResource() {
     try {
       const response = await this.apiClient.get("/time_entries.json", {
-        params: { 
+        params: {
           limit: 10,
         },
       });
@@ -687,7 +698,10 @@ class RedmineMCPServer {
   }
 
   // Prompt implementations
-  private getIssueSummaryPrompt(args: PromptArgs): { description: string; messages: Array<{ role: "user"; content: { type: "text"; text: string } }> } {
+  private getIssueSummaryPrompt(args: PromptArgs): {
+    description: string;
+    messages: Array<{ role: "user"; content: { type: "text"; text: string } }>;
+  } {
     const projectId = args.project_id;
     if (!projectId) {
       throw new Error("project_id is required for issue summary");
@@ -716,7 +730,10 @@ Format the response in a clear, organized manner that would be useful for a proj
     };
   }
 
-  private getTimeReportPrompt(args: PromptArgs): { description: string; messages: Array<{ role: "user"; content: { type: "text"; text: string } }> } {
+  private getTimeReportPrompt(args: PromptArgs): {
+    description: string;
+    messages: Array<{ role: "user"; content: { type: "text"; text: string } }>;
+  } {
     const projectId = args.project_id;
     const userId = args.user_id;
     const fromDate = args.from_date;
@@ -789,7 +806,7 @@ process.on("SIGTERM", async () => {
 });
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((error) => {
+  main().catch(error => {
     console.error("Unhandled error:", error);
     process.exit(1);
   });

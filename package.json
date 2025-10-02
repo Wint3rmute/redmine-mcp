@@ -11,7 +11,10 @@
     "prepare": "npm run build",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "lint:check": "eslint src --ext .ts --max-warnings 0"
+    "lint:check": "eslint src --ext .ts --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --write .",
+    "format:src": "prettier --write src/**/*.ts"
   },
   "keywords": [
     "mcp",
@@ -31,8 +34,10 @@
     "@eslint/js": "^9.36.0",
     "@types/node": "^20.0.0",
     "eslint": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
     "globals": "^16.4.0",
     "jiti": "^2.6.1",
+    "prettier": "^3.6.2",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.45.0"
   },
