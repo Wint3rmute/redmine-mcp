@@ -176,8 +176,24 @@ class RedmineMCPServer {
             },
           },
           {
+            name: "get_time_activities",
+            description:
+              "Get available time tracking activities for a project or globally. Use this before logging time to get valid activity IDs.",
+            inputSchema: {
+              type: "object",
+              properties: {
+                project_id: {
+                  type: "number",
+                  description:
+                    "Project ID to get project-specific activities. If omitted, returns global activities.",
+                },
+              },
+            },
+          },
+          {
             name: "log_time",
-            description: "Log time spent on an issue or project",
+            description:
+              "Log time spent on an issue or project. Activity ID is required - use get_time_activities first to see available options.",
             inputSchema: {
               type: "object",
               properties: {
@@ -203,10 +219,11 @@ class RedmineMCPServer {
                 },
                 activity_id: {
                   type: "number",
-                  description: "Activity ID",
+                  description:
+                    "Activity ID (required). Use get_time_activities tool to get valid IDs for the project.",
                 },
               },
-              required: ["hours"],
+              required: ["hours", "activity_id"],
             },
           },
           {
@@ -234,6 +251,8 @@ class RedmineMCPServer {
           return await this.createIssue((args || {}) as unknown as CreateIssueArgs);
         case "get_time_entries":
           return await this.getTimeEntries((args || {}) as GetTimeEntriesArgs);
+        case "get_time_activities":
+          return await this.getTimeActivities((args || {}) as { project_id?: number });
         case "log_time":
           return await this.logTime((args || {}) as unknown as LogTimeArgs);
         case "get_current_user":
@@ -480,6 +499,63 @@ class RedmineMCPServer {
     }
   }
 
+  private async getTimeActivities(args: {
+    project_id?: number;
+  }): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+    try {
+      let response;
+
+      if (args.project_id) {
+        // Get project-specific activities
+        response = await this.apiClient.get(
+          `/projects/${args.project_id}.json?include=time_entry_activities`,
+        );
+        const activities = response.data.project.time_entry_activities || [];
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text:
+                `Project-specific time tracking activities for project ${args.project_id}:\n\n` +
+                activities
+                  .map(
+                    (activity: { id: number; name: string }) =>
+                      `ID: ${activity.id} - ${activity.name}`,
+                  )
+                  .join("\n") +
+                `\n\nTotal: ${activities.length} activities available for this project.`,
+            },
+          ],
+        };
+      } else {
+        // Get global activities
+        response = await this.apiClient.get("/enumerations/time_entry_activities.json");
+        const activities = response.data.time_entry_activities || [];
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text:
+                `Global time tracking activities:\n\n` +
+                activities
+                  .map(
+                    (activity: { id: number; name: string; active: boolean }) =>
+                      `ID: ${activity.id} - ${activity.name} (${activity.active ? "active" : "inactive"})`,
+                  )
+                  .join("\n") +
+                `\n\nTotal: ${activities.length} activities. Note: Projects may have their own subset of activities.`,
+            },
+          ],
+        };
+      }
+    } catch (error) {
+      console.error("Error fetching time activities:", error);
+      throw new Error(`Failed to fetch time activities: ${error}`);
+    }
+  }
+
   private async logTime(
     args: LogTimeArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
@@ -488,15 +564,21 @@ class RedmineMCPServer {
         throw new Error("hours is required");
       }
 
+      if (!args.activity_id) {
+        throw new Error(
+          "activity_id is required. Use get_time_activities tool to get valid activity IDs for the project.",
+        );
+      }
+
       const timeData: Record<string, string | number> = {
         hours: args.hours,
+        activity_id: args.activity_id,
       };
 
       if (args.issue_id) timeData["issue_id"] = args.issue_id;
       if (args.project_id) timeData["project_id"] = args.project_id;
       if (args.comments) timeData["comments"] = args.comments;
       if (args.spent_on) timeData["spent_on"] = args.spent_on;
-      if (args.activity_id) timeData["activity_id"] = args.activity_id;
 
       if (!timeData["issue_id"] && !timeData["project_id"]) {
         throw new Error("Either issue_id or project_id must be provided");
