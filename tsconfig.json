@@ -26,19 +26,30 @@
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     
+    // Ultra-strict additional options
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "useDefineForClassFields": true,
+    "verbatimModuleSyntax": true,
+    
     // Module Resolution
     "esModuleInterop": true,
-    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    
+    // Ultra-strict module options
+    "skipLibCheck": false,  // Changed to false for maximum strictness
+    "allowImportingTsExtensions": false,
     
     // Emit
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "removeComments": true,
-    "noEmitOnError": true
+    "noEmitOnError": true,
+    "stripInternal": true
   },
   "include": [
     "src/**/*"

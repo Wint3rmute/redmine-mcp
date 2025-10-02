@@ -10,11 +10,10 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { z } from "zod";
-import axios, { AxiosInstance } from "axios";
+import axios, { type AxiosInstance } from "axios";
 
 // Types for Redmine API responses
-interface RedmineIssue {
+export interface RedmineIssue {
   id: number;
   subject: string;
   description?: string;
@@ -38,7 +37,7 @@ interface RedmineIssue {
   updated_on: string;
 }
 
-interface RedmineProject {
+export interface RedmineProject {
   id: number;
   name: string;
   identifier: string;
@@ -48,7 +47,7 @@ interface RedmineProject {
   updated_on: string;
 }
 
-interface RedmineTimeEntry {
+export interface RedmineTimeEntry {
   id: number;
   hours: number;
   comments: string;
@@ -79,8 +78,8 @@ class RedmineMCPServer {
 
   constructor() {
     // Get configuration from environment variables
-    this.baseUrl = process.env.REDMINE_URL || "";
-    this.apiKey = process.env.REDMINE_API_KEY || "";
+    this.baseUrl = process.env['REDMINE_URL'] || "";
+    this.apiKey = process.env['REDMINE_API_KEY'] || "";
     
     if (!this.baseUrl || !this.apiKey) {
       throw new Error("REDMINE_URL and REDMINE_API_KEY environment variables are required");
@@ -562,7 +561,7 @@ class RedmineMCPServer {
     }
   }
 
-  private async getCurrentUser(args: any) {
+  private async getCurrentUser(_args: any) {
     try {
       const response = await this.apiClient.get("/users/current.json");
       
