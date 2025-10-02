@@ -41,6 +41,8 @@ export type {
   GetIssuesArgs,
   GetProjectsArgs,
   CreateIssueArgs,
+  UpdateIssueArgs,
+  GetIssueByIdArgs,
   GetTimeEntriesArgs,
   LogTimeArgs,
   GetCurrentUserArgs,
@@ -56,4 +58,5 @@ export {
   isGetTimeEntriesArgs,
   isGetCurrentUserArgs,
   isPromptArgs,
+  isGetIssueByIdArgs,
 } from "./requests.js";

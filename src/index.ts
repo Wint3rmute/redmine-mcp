@@ -16,6 +16,8 @@ import type {
   GetIssuesArgs,
   GetProjectsArgs,
   CreateIssueArgs,
+  UpdateIssueArgs,
+  GetIssueByIdArgs,
   GetTimeEntriesArgs,
   LogTimeArgs,
   PromptArgs,
@@ -90,6 +92,14 @@ class RedmineMCPServer {
                   description: "Maximum number of issues to return",
                   default: 25,
                 },
+                issue_id: {
+                  type: "string",
+                  description: "Single issue ID or comma-separated list of issue IDs",
+                },
+                subject: {
+                  type: "string",
+                  description: "Search for issues containing this text in the subject/title",
+                },
               },
             },
           },
@@ -109,6 +119,20 @@ class RedmineMCPServer {
                   description: "Search for projects containing this name (case-insensitive)",
                 },
               },
+            },
+          },
+          {
+            name: "get_issue_by_id",
+            description: "Get a specific issue by its ID from Redmine",
+            inputSchema: {
+              type: "object",
+              properties: {
+                issue_id: {
+                  type: "number",
+                  description: "The ID of the issue to retrieve",
+                },
+              },
+              required: ["issue_id"],
             },
           },
           {
@@ -139,6 +163,48 @@ class RedmineMCPServer {
                 },
               },
               required: ["project_id", "subject"],
+            },
+          },
+          {
+            name: "update_issue",
+            description: "Update an existing issue in Redmine",
+            inputSchema: {
+              type: "object",
+              properties: {
+                issue_id: {
+                  type: "number",
+                  description: "Issue ID to update",
+                },
+                subject: {
+                  type: "string",
+                  description: "Issue subject/title",
+                },
+                description: {
+                  type: "string",
+                  description: "Issue description",
+                },
+                priority_id: {
+                  type: "number",
+                  description: "Priority ID",
+                },
+                assigned_to_id: {
+                  type: "number",
+                  description: "User ID to assign the issue to",
+                },
+                status_id: {
+                  type: "number",
+                  description: "Status ID",
+                },
+                done_ratio: {
+                  type: "number",
+                  description: "Completion percentage (0-100)",
+                },
+                notes: {
+                  type: "string",
+                  description: "Notes to add to the issue (visible in issue history)",
+                },
+              },
+              required: ["issue_id"],
             },
           },
           {
@@ -247,8 +313,12 @@ class RedmineMCPServer {
           return await this.getIssues((args || {}) as GetIssuesArgs);
         case "get_projects":
           return await this.getProjects((args || {}) as GetProjectsArgs);
+        case "get_issue_by_id":
+          return await this.getIssueById((args || {}) as unknown as GetIssueByIdArgs);
         case "create_issue":
           return await this.createIssue((args || {}) as unknown as CreateIssueArgs);
+        case "update_issue":
+          return await this.updateIssue((args || {}) as unknown as UpdateIssueArgs);
         case "get_time_entries":
           return await this.getTimeEntries((args || {}) as GetTimeEntriesArgs);
         case "get_time_activities":
@@ -375,6 +445,8 @@ class RedmineMCPServer {
       if (args.status_id) params["status_id"] = args.status_id;
       if (args.assigned_to_id) params["assigned_to_id"] = args.assigned_to_id;
       if (args.limit) params["limit"] = args.limit;
+      if (args.issue_id) params["issue_id"] = args.issue_id;
+      if (args.subject) params["subject"] = `~${args.subject}`; // Use contains search
 
       // Sort by priority (descending) by default, then by updated date
       params["sort"] = "priority:desc,updated_on:desc";
@@ -392,6 +464,26 @@ class RedmineMCPServer {
     } catch (error) {
       console.error("Error fetching issues:", error);
       throw new Error(`Failed to fetch issues: ${error}`);
+    }
+  }
+
+  private async getIssueById(
+    args: GetIssueByIdArgs,
+  ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+    try {
+      const response = await this.apiClient.get(`/issues/${args.issue_id}.json`);
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      console.error(`Error fetching issue ${args.issue_id}:`, error);
+      throw new Error(`Failed to fetch issue ${args.issue_id}: ${error}`);
     }
   }
 
@@ -467,6 +559,50 @@ class RedmineMCPServer {
     } catch (error) {
       console.error("Error creating issue:", error);
       throw new Error(`Failed to create issue: ${error}`);
+    }
+  }
+
+  private async updateIssue(
+    args: UpdateIssueArgs,
+  ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+    try {
+      if (!args.issue_id) {
+        throw new Error("issue_id is required");
+      }
+
+      const issueData: Record<string, string | number> = {};
+
+      // Only include fields that are provided
+      if (args.subject) issueData["subject"] = args.subject;
+      if (args.description) issueData["description"] = args.description;
+      if (args.priority_id) issueData["priority_id"] = args.priority_id;
+      if (args.assigned_to_id) issueData["assigned_to_id"] = args.assigned_to_id;
+      if (args.status_id) issueData["status_id"] = args.status_id;
+      if (args.done_ratio !== undefined) issueData["done_ratio"] = args.done_ratio;
+      if (args.notes) issueData["notes"] = args.notes;
+      if (args.tracker_id) issueData["tracker_id"] = args.tracker_id;
+      if (args.category_id) issueData["category_id"] = args.category_id;
+      if (args.fixed_version_id) issueData["fixed_version_id"] = args.fixed_version_id;
+      if (args.start_date) issueData["start_date"] = args.start_date;
+      if (args.due_date) issueData["due_date"] = args.due_date;
+      if (args.estimated_hours) issueData["estimated_hours"] = args.estimated_hours;
+      if (args.parent_issue_id) issueData["parent_issue_id"] = args.parent_issue_id;
+
+      const response = await this.apiClient.put(`/issues/${args.issue_id}.json`, {
+        issue: issueData,
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Issue updated successfully: ${JSON.stringify(response.data, null, 2)}`,
+          },
+        ],
+      };
+    } catch (error) {
+      console.error("Error updating issue:", error);
+      throw new Error(`Failed to update issue: ${error}`);
     }
   }
 

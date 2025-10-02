@@ -13,15 +13,17 @@ export interface BaseRequestArgs {
 /**
  * Arguments for getting issues from Redmine
  */
-export interface GetIssuesArgs extends BaseRequestArgs {
+export interface GetIssuesArgs {
   project_id?: string;
-  status_id?: string;
   assigned_to_id?: string;
-  tracker_id?: string;
-  category_id?: string;
-  fixed_version_id?: string;
-  sort?: string;
-  include?: string;
+  status_id?: string;
+  limit?: number;
+  issue_id?: string; // Single issue ID or comma-separated list
+  subject?: string; // Search in issue subject/title
+}
+
+export interface GetIssueByIdArgs {
+  issue_id: number;
 }
 
 /**
@@ -49,6 +51,31 @@ export interface CreateIssueArgs {
   estimated_hours?: number;
   done_ratio?: number;
   parent_issue_id?: number;
+  custom_fields?: Array<{
+    id: number;
+    value: string | number | boolean;
+  }>;
+}
+
+/**
+ * Arguments for updating an existing issue in Redmine
+ */
+export interface UpdateIssueArgs {
+  issue_id: number;
+  subject?: string;
+  description?: string;
+  priority_id?: number;
+  assigned_to_id?: number;
+  tracker_id?: number;
+  category_id?: number;
+  fixed_version_id?: number;
+  start_date?: string;
+  due_date?: string;
+  estimated_hours?: number;
+  done_ratio?: number;
+  parent_issue_id?: number;
+  status_id?: number;
+  notes?: string;
   custom_fields?: Array<{
     id: number;
     value: string | number | boolean;
@@ -135,6 +162,15 @@ export function isCreateIssueArgs(args: unknown): args is CreateIssueArgs {
   return typeof typed["project_id"] === "string" && typeof typed["subject"] === "string";
 }
 
+export function isUpdateIssueArgs(args: unknown): args is UpdateIssueArgs {
+  if (typeof args !== "object" || args === null) {
+    return false;
+  }
+
+  const typed = args as Record<string, unknown>;
+  return typeof typed["issue_id"] === "number" && typed["issue_id"] > 0;
+}
+
 export function isLogTimeArgs(args: unknown): args is LogTimeArgs {
   if (typeof args !== "object" || args === null) {
     return false;
@@ -154,4 +190,12 @@ export function isGetCurrentUserArgs(args: unknown): args is GetCurrentUserArgs 
 
 export function isPromptArgs(args: unknown): args is PromptArgs {
   return typeof args === "object" && args !== null;
+}
+
+export function isGetIssueByIdArgs(args: unknown): args is GetIssueByIdArgs {
+  if (typeof args !== "object" || args === null) {
+    return false;
+  }
+  const typed = args as Record<string, unknown>;
+  return typeof typed["issue_id"] === "number" && typed["issue_id"] > 0;
 }
