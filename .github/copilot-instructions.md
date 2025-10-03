@@ -1,57 +1,190 @@
-<!-- Use this file to provide workspace-specific custom instructions to Copilot. For more details, visit https://code.visualstudio.com/docs/copilot/copilot-customization#_use-a-githubcopilotinstructionsmd-file -->
+# Copilot Instructions for Redmine MCP Server
 
-- [x] Verify that the copilot-instructions.md file in the .github directory is
-      created.
+## Project Overview
 
-- [x] Clarify Project Requirements
-<!-- Project type: MCP Server for Redmine integration using TypeScript -->
+This is a **Model Context Protocol (MCP) server** that provides AI assistants like Claude with access to Redmine project management systems. The server is built with TypeScript and exposes Redmine's REST API through MCP tools, resources, and prompts.
 
-- [x] Scaffold the Project
-<!--
-Created complete MCP server project structure with:
-- package.json with proper dependencies (@modelcontextprotocol/sdk, axios,
-  TypeScript)
-- TypeScript configuration (tsconfig.json)
-- Main server implementation (src/index.ts) with comprehensive Redmine
-  integration
-- Configuration files (.env.example, .gitignore, README.md)
-- VS Code MCP configuration (.vscode/mcp.json) -->
+## Tech Stack
 
-- [x] Customize the Project
-<!--
-✅ Complete MCP server implementation with proper SDK integration
-✅ All 5 tools implemented: get_issues, get_projects, create_issue, get_time_entries, log_time
-✅ All 3 resources implemented: projects, recent_issues, recent_time_entries
-✅ All 2 prompts implemented: issue_summary, time_report
-✅ Server compiles successfully and starts correctly
--->
+- **Language**: TypeScript with strict mode enabled
+- **Runtime**: Node.js 18+
+- **Protocol**: Model Context Protocol (MCP) via `@modelcontextprotocol/sdk`
+- **HTTP Client**: Axios for Redmine REST API communication
+- **Validation**: Zod for runtime type checking at API boundaries
+- **Build**: TypeScript compiler with ES2022 target
 
-- [x] Install Required Extensions
-<!-- For TypeScript MCP server, no specific extensions required beyond standard VS Code TypeScript support -->
+## Project Structure
 
-- [x] Compile the Project
-<!--
-✅ All dependencies installed successfully
-✅ TypeScript compilation successful with npm run build
-✅ Server starts correctly and detects missing environment variables as expected
-✅ Build output generated in build/ directory
--->
+```
+src/
+├── index.ts              # Main server implementation with tool registration
+├── config/
+│   ├── index.ts         # Configuration exports
+│   └── server-config.ts # Environment variable validation
+└── types/
+    ├── index.ts         # Type exports
+    ├── mcp.ts           # MCP protocol types
+    ├── redmine.ts       # Redmine domain models
+    └── requests.ts      # Tool argument types
+```
 
-- [x] Create and Run Task
-<!--
-MCP servers don't require VS Code tasks as they run via stdio transport.
-The server is started with npm start or npm run dev commands.
--->
+## Key Conventions
 
-- [ ] Launch the Project
-<!--
-Verify that all previous steps have been completed.
-Prompt user for debug mode, launch only if confirmed.
- -->
+### TypeScript
 
-- [ ] Ensure Documentation is Complete
-<!--
-Verify that all previous steps have been completed.
-Verify that README.md and the copilot-instructions.md file in the .github directory exists and contains current project information.
-Clean up the copilot-instructions.md file in the .github directory by removing all HTML comments.
- -->
+1. **Strict mode enabled**: All strict TypeScript checks are active, including `exactOptionalPropertyTypes`
+2. **Explicit `| undefined`**: Optional properties must explicitly include `| undefined` type
+3. **No implicit any**: All types must be explicitly declared
+4. **ESM modules**: Use `.js` extensions in imports (e.g., `from "./config/index.js"`)
+
+### Code Style
+
+1. **Idiomatic patterns**: Follow modern TypeScript idioms
+2. **Error handling**: All async operations wrapped in try-catch
+3. **JSDoc comments**: Comprehensive documentation for all public methods
+4. **No side effects in constructors**: EXCEPT tool registration (this is MCP SDK pattern)
+
+### MCP Patterns
+
+1. **Tool registration in constructor**: Tools, resources, and prompts are registered in the constructor (MCP SDK recommendation)
+2. **Zod schemas**: All tool inputs use Zod schemas for validation
+3. **Consistent responses**: All tools return `{ content: [{ type: "text", text: string }] }`
+4. **Private methods**: Tool implementations are private class methods
+
+### Redmine Integration
+
+1. **Textile format**: Issue descriptions and notes use Redmine's Textile markup (pass through as-is)
+2. **API key auth**: Authentication via `X-Redmine-API-Key` header
+3. **Environment config**: All credentials loaded from env vars, never hardcoded
+4. **Error wrapping**: Axios errors wrapped with contextual messages
+
+## Development Workflow
+
+### Building
+```bash
+npm run build          # Compile TypeScript
+npm run dev           # Watch mode
+```
+
+### Code Quality
+```bash
+npm run lint          # ESLint check
+npm run lint:fix      # Auto-fix issues
+npm run format        # Prettier format
+```
+
+### Testing
+```bash
+npx @modelcontextprotocol/inspector node build/index.js
+```
+
+## Common Tasks
+
+### Adding a New Tool
+
+1. Define argument types in `src/types/requests.ts`:
+   ```typescript
+   export interface MyToolArgs {
+     required_field: string;
+     optional_field?: string | undefined;
+   }
+   ```
+
+2. Add to type exports in `src/types/index.ts`
+
+3. Register in constructor with Zod schema:
+   ```typescript
+   this.server.registerTool(
+     "my_tool",
+     {
+       title: "My Tool",
+       description: "What this tool does",
+       inputSchema: {
+         required_field: z.string(),
+         optional_field: z.string().optional(),
+       },
+     },
+     async (args: MyToolArgs) => await this.myTool(args)
+   );
+   ```
+
+4. Implement private method:
+   ```typescript
+   private async myTool(args: MyToolArgs): Promise<ToolResponse> {
+     try {
+       const response = await this.apiClient.get('/endpoint', { params });
+       return {
+         content: [{
+           type: "text" as const,
+           text: JSON.stringify(response.data, null, 2),
+         }],
+       };
+     } catch (error) {
+       console.error("Error in myTool:", error);
+       throw new Error(`Failed to execute myTool: ${error}`);
+     }
+   }
+   ```
+
+### Adding a Redmine Type
+
+Add to `src/types/redmine.ts` following existing patterns. Include all relevant fields from Redmine API docs.
+
+### Modifying Configuration
+
+Update `src/config/server-config.ts` with new validation logic. Never access `process.env` directly from main code.
+
+## Security Guidelines
+
+1. **Never commit** `.env` files or API keys
+2. **Use environment variables** for all sensitive configuration
+3. **Validate inputs** using Zod schemas at API boundaries
+4. **Sanitize errors** before returning to avoid leaking internals
+5. **Check .gitignore** before committing to ensure secrets excluded
+
+## MCP Server Specifics
+
+This server follows MCP SDK conventions:
+
+- Tools are registered in constructor (not a side effect anti-pattern for MCP)
+- Server is immutable after connection
+- All capabilities declared upfront before `connect()` is called
+- stdio transport for communication with AI clients
+
+## Current Implementation Status
+
+### Tools (9 implemented)
+- get_issues, get_issue_by_id, get_projects, create_issue, update_issue
+- get_time_entries, get_time_activities, log_time, get_current_user
+
+### Resources (3 implemented)
+- redmine://projects
+- redmine://issues/recent
+- redmine://time_entries/recent
+
+### Features
+- ✅ Full TypeScript strict mode
+- ✅ Zod validation at boundaries
+- ✅ Comprehensive error handling
+- ✅ Environment-based configuration
+- ✅ ESLint + Prettier configured
+- ✅ Clean architecture with separated concerns
+
+## References
+
+- [MCP Documentation](https://modelcontextprotocol.io)
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+- [Redmine REST API](https://www.redmine.org/projects/redmine/wiki/Rest_api)
+- [Redmine Textile Formatting](https://www.redmine.org/projects/redmine/wiki/RedmineTextFormattingTextile)
+
+## Notes for AI Assistants
+
+When working on this codebase:
+
+1. Maintain strict TypeScript compliance
+2. Follow existing patterns for consistency
+3. Add JSDoc comments for new public methods
+4. Update types when adding new Redmine API features
+5. Test with MCP Inspector after changes
+6. Keep error messages informative but secure
+7. Remember: tool registration in constructor is correct for MCP servers
