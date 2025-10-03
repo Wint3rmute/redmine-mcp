@@ -4,7 +4,6 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
-  ListToolsRequestSchema,
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
   ListPromptsRequestSchema,
@@ -57,7 +56,242 @@ class RedmineMCPServer {
       timeout: config.redmine.timeout,
     });
 
-    // Initialize MCP server
+    // Define tools statically as an object keyed by tool name
+    const tools = {
+      get_issues: {
+        name: "get_issues",
+        description: "Get issues from Redmine with optional filtering",
+        inputSchema: {
+          type: "object",
+          properties: {
+            project_id: {
+              type: "string",
+              description: "Project ID or identifier to filter issues",
+            },
+            status_id: {
+              type: "string",
+              description: "Status ID to filter issues (e.g., 'open', 'closed', or specific ID)",
+            },
+            assigned_to_id: {
+              type: "string",
+              description: "User ID to filter issues assigned to specific user",
+            },
+            limit: {
+              type: "number",
+              description: "Maximum number of issues to return",
+              default: 25,
+            },
+            issue_id: {
+              type: "string",
+              description: "Single issue ID or comma-separated list of issue IDs",
+            },
+            subject: {
+              type: "string",
+              description: "Search for issues containing this text in the subject/title",
+            },
+          },
+        },
+      },
+      get_projects: {
+        name: "get_projects",
+        description: "Get mapping of project names to their IDs from Redmine",
+        inputSchema: {
+          type: "object",
+          properties: {
+            limit: {
+              type: "number",
+              description: "Maximum number of projects to return",
+              default: 100,
+            },
+            name: {
+              type: "string",
+              description: "Search for projects containing this name (case-insensitive)",
+            },
+          },
+        },
+      },
+      get_issue_by_id: {
+        name: "get_issue_by_id",
+        description: "Get a specific issue by its ID from Redmine",
+        inputSchema: {
+          type: "object",
+          properties: {
+            issue_id: {
+              type: "number",
+              description: "The ID of the issue to retrieve",
+            },
+          },
+          required: ["issue_id"],
+        },
+      },
+      create_issue: {
+        name: "create_issue",
+        description: "Create a new issue in Redmine",
+        inputSchema: {
+          type: "object",
+          properties: {
+            project_id: {
+              type: "string",
+              description: "Project ID or identifier where to create the issue",
+            },
+            subject: {
+              type: "string",
+              description: "Issue subject/title",
+            },
+            description: {
+              type: "string",
+              description: "Issue description",
+            },
+            priority_id: {
+              type: "number",
+              description: "Priority ID",
+            },
+            assigned_to_id: {
+              type: "number",
+              description: "User ID to assign the issue to",
+            },
+          },
+          required: ["project_id", "subject"],
+        },
+      },
+      update_issue: {
+        name: "update_issue",
+        description: "Update an existing issue in Redmine",
+        inputSchema: {
+          type: "object",
+          properties: {
+            issue_id: {
+              type: "number",
+              description: "Issue ID to update",
+            },
+            subject: {
+              type: "string",
+              description: "Issue subject/title",
+            },
+            description: {
+              type: "string",
+              description: "Issue description",
+            },
+            priority_id: {
+              type: "number",
+              description: "Priority ID",
+            },
+            assigned_to_id: {
+              type: "number",
+              description: "User ID to assign the issue to",
+            },
+            status_id: {
+              type: "number",
+              description: "Status ID",
+            },
+            done_ratio: {
+              type: "number",
+              description: "Completion percentage (0-100)",
+            },
+            notes: {
+              type: "string",
+              description: "Notes to add to the issue (visible in issue history)",
+            },
+          },
+          required: ["issue_id"],
+        },
+      },
+      get_time_entries: {
+        name: "get_time_entries",
+        description: "Get time entries from Redmine",
+        inputSchema: {
+          type: "object",
+          properties: {
+            project_id: {
+              type: "string",
+              description: "Project ID to filter time entries",
+            },
+            issue_id: {
+              type: "string",
+              description: "Issue ID to filter time entries",
+            },
+            user_id: {
+              type: "string",
+              description: "User ID to filter time entries",
+            },
+            from: {
+              type: "string",
+              description: "Start date (YYYY-MM-DD format)",
+            },
+            to: {
+              type: "string",
+              description: "End date (YYYY-MM-DD format)",
+            },
+            limit: {
+              type: "number",
+              description: "Maximum number of time entries to return",
+              default: 25,
+            },
+          },
+        },
+      },
+      get_time_activities: {
+        name: "get_time_activities",
+        description:
+          "Get available time tracking activities for a project or globally. Use this before logging time to get valid activity IDs.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            project_id: {
+              type: "number",
+              description:
+                "Project ID to get project-specific activities. If omitted, returns global activities.",
+            },
+          },
+        },
+      },
+      log_time: {
+        name: "log_time",
+        description:
+          "Log time spent on an issue or project. Activity ID is required - use get_time_activities first to see available options.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            issue_id: {
+              type: "number",
+              description: "Issue ID to log time against",
+            },
+            project_id: {
+              type: "number",
+              description: "Project ID to log time against",
+            },
+            hours: {
+              type: "number",
+              description: "Hours to log",
+            },
+            comments: {
+              type: "string",
+              description: "Comments for the time entry",
+            },
+            spent_on: {
+              type: "string",
+              description: "Date when time was spent (YYYY-MM-DD format, defaults to today)",
+            },
+            activity_id: {
+              type: "number",
+              description:
+                "Activity ID (required). Use get_time_activities tool to get valid IDs for the project.",
+            },
+          },
+          required: ["hours", "activity_id"],
+        },
+      },
+      get_current_user: {
+        name: "get_current_user",
+        description: "Get information about the current user (based on API token)",
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+      },
+    };
+
+    // Initialize MCP server with static tools as an object
     this.server = new Server(
       {
         name: config.server.name,
@@ -65,7 +299,7 @@ class RedmineMCPServer {
       },
       {
         capabilities: {
-          tools: {},
+          tools,
           resources: {},
           prompts: {},
         },
@@ -84,245 +318,7 @@ class RedmineMCPServer {
    * - Prompt responses (issue summaries, time reports)
    */
   private setupHandlers(): void {
-    // Handle list tools request
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-      return {
-        tools: [
-          {
-            name: "get_issues",
-            description: "Get issues from Redmine with optional filtering",
-            inputSchema: {
-              type: "object",
-              properties: {
-                project_id: {
-                  type: "string",
-                  description: "Project ID or identifier to filter issues",
-                },
-                status_id: {
-                  type: "string",
-                  description:
-                    "Status ID to filter issues (e.g., 'open', 'closed', or specific ID)",
-                },
-                assigned_to_id: {
-                  type: "string",
-                  description: "User ID to filter issues assigned to specific user",
-                },
-                limit: {
-                  type: "number",
-                  description: "Maximum number of issues to return",
-                  default: 25,
-                },
-                issue_id: {
-                  type: "string",
-                  description: "Single issue ID or comma-separated list of issue IDs",
-                },
-                subject: {
-                  type: "string",
-                  description: "Search for issues containing this text in the subject/title",
-                },
-              },
-            },
-          },
-          {
-            name: "get_projects",
-            description: "Get mapping of project names to their IDs from Redmine",
-            inputSchema: {
-              type: "object",
-              properties: {
-                limit: {
-                  type: "number",
-                  description: "Maximum number of projects to return",
-                  default: 100,
-                },
-                name: {
-                  type: "string",
-                  description: "Search for projects containing this name (case-insensitive)",
-                },
-              },
-            },
-          },
-          {
-            name: "get_issue_by_id",
-            description: "Get a specific issue by its ID from Redmine",
-            inputSchema: {
-              type: "object",
-              properties: {
-                issue_id: {
-                  type: "number",
-                  description: "The ID of the issue to retrieve",
-                },
-              },
-              required: ["issue_id"],
-            },
-          },
-          {
-            name: "create_issue",
-            description: "Create a new issue in Redmine",
-            inputSchema: {
-              type: "object",
-              properties: {
-                project_id: {
-                  type: "string",
-                  description: "Project ID or identifier where to create the issue",
-                },
-                subject: {
-                  type: "string",
-                  description: "Issue subject/title",
-                },
-                description: {
-                  type: "string",
-                  description: "Issue description",
-                },
-                priority_id: {
-                  type: "number",
-                  description: "Priority ID",
-                },
-                assigned_to_id: {
-                  type: "number",
-                  description: "User ID to assign the issue to",
-                },
-              },
-              required: ["project_id", "subject"],
-            },
-          },
-          {
-            name: "update_issue",
-            description: "Update an existing issue in Redmine",
-            inputSchema: {
-              type: "object",
-              properties: {
-                issue_id: {
-                  type: "number",
-                  description: "Issue ID to update",
-                },
-                subject: {
-                  type: "string",
-                  description: "Issue subject/title",
-                },
-                description: {
-                  type: "string",
-                  description: "Issue description",
-                },
-                priority_id: {
-                  type: "number",
-                  description: "Priority ID",
-                },
-                assigned_to_id: {
-                  type: "number",
-                  description: "User ID to assign the issue to",
-                },
-                status_id: {
-                  type: "number",
-                  description: "Status ID",
-                },
-                done_ratio: {
-                  type: "number",
-                  description: "Completion percentage (0-100)",
-                },
-                notes: {
-                  type: "string",
-                  description: "Notes to add to the issue (visible in issue history)",
-                },
-              },
-              required: ["issue_id"],
-            },
-          },
-          {
-            name: "get_time_entries",
-            description: "Get time entries from Redmine",
-            inputSchema: {
-              type: "object",
-              properties: {
-                project_id: {
-                  type: "string",
-                  description: "Project ID to filter time entries",
-                },
-                issue_id: {
-                  type: "string",
-                  description: "Issue ID to filter time entries",
-                },
-                user_id: {
-                  type: "string",
-                  description: "User ID to filter time entries",
-                },
-                from: {
-                  type: "string",
-                  description: "Start date (YYYY-MM-DD format)",
-                },
-                to: {
-                  type: "string",
-                  description: "End date (YYYY-MM-DD format)",
-                },
-                limit: {
-                  type: "number",
-                  description: "Maximum number of time entries to return",
-                  default: 25,
-                },
-              },
-            },
-          },
-          {
-            name: "get_time_activities",
-            description:
-              "Get available time tracking activities for a project or globally. Use this before logging time to get valid activity IDs.",
-            inputSchema: {
-              type: "object",
-              properties: {
-                project_id: {
-                  type: "number",
-                  description:
-                    "Project ID to get project-specific activities. If omitted, returns global activities.",
-                },
-              },
-            },
-          },
-          {
-            name: "log_time",
-            description:
-              "Log time spent on an issue or project. Activity ID is required - use get_time_activities first to see available options.",
-            inputSchema: {
-              type: "object",
-              properties: {
-                issue_id: {
-                  type: "number",
-                  description: "Issue ID to log time against",
-                },
-                project_id: {
-                  type: "number",
-                  description: "Project ID to log time against",
-                },
-                hours: {
-                  type: "number",
-                  description: "Hours to log",
-                },
-                comments: {
-                  type: "string",
-                  description: "Comments for the time entry",
-                },
-                spent_on: {
-                  type: "string",
-                  description: "Date when time was spent (YYYY-MM-DD format, defaults to today)",
-                },
-                activity_id: {
-                  type: "number",
-                  description:
-                    "Activity ID (required). Use get_time_activities tool to get valid IDs for the project.",
-                },
-              },
-              required: ["hours", "activity_id"],
-            },
-          },
-          {
-            name: "get_current_user",
-            description: "Get information about the current user (based on API token)",
-            inputSchema: {
-              type: "object",
-              properties: {},
-            },
-          },
-        ],
-      };
-    });
+    // ...existing code...
 
     // Handle call tool request
     this.server.setRequestHandler(CallToolRequestSchema, async request => {
