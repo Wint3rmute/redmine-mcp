@@ -9,12 +9,12 @@ logging.
 
 ### Tools
 
-- **get_issues** - Retrieve issues with optional filtering by project, status,
+- `get_issues` - Retrieve issues with optional filtering by project, status,
   assignee
-- **get_projects** - List available Redmine projects
-- **create_issue** - Create new issues in Redmine projects
-- **get_time_entries** - Retrieve time entries with filtering options
-- **log_time** - Log time spent on issues or projects
+- `get_projects` - List available Redmine projects
+- `create_issue` - Create new issues in Redmine projects
+- `get_time_entries` - Retrieve time entries with filtering options
+- `log_time` - Log time spent on issues or projects
 
 ### Resources
 
@@ -55,43 +55,23 @@ export REDMINE_API_KEY="your_api_key_here"
    ```bash
    npm run build
    ```
-4. Start the server:
-   ```bash
-   npm start
-   ```
 
 ## Usage with MCP Clients
 
-### Claude Desktop
+### VsCode
 
-Add to your `claude_desktop_config.json`:
+Clone this repository and create the file `.vscode/mcp.json` with following contents:
 
 ```json
 {
-  "mcpServers": {
-    "redmine": {
+  "servers": {
+    "redmine-mcp-server": {
+      "type": "stdio",
       "command": "node",
-      "args": ["/path/to/redmine-mcp-server/build/index.js"],
+      "args": ["build/index.js"],
       "env": {
-        "REDMINE_URL": "https://your-redmine-instance.com",
-        "REDMINE_API_KEY": "your_api_key_here"
-      }
-    }
-  }
-}
-```
-
-### Via npx (if published)
-
-```json
-{
-  "mcpServers": {
-    "redmine": {
-      "command": "npx",
-      "args": ["redmine-mcp-server"],
-      "env": {
-        "REDMINE_URL": "https://your-redmine-instance.com",
-        "REDMINE_API_KEY": "your_api_key_here"
+        "REDMINE_URL": "your URL here",
+        "REDMINE_API_KEY": "your API key here"
       }
     }
   }
@@ -106,10 +86,11 @@ Add to your `claude_desktop_config.json`:
 npm run build
 ```
 
-### Development Mode (watch for changes)
+### Linting
 
 ```bash
-npm run dev
+npm run lint
+npm run format
 ```
 
 ### Testing with MCP Inspector
@@ -117,33 +98,3 @@ npm run dev
 ```bash
 npx @modelcontextprotocol/inspector node build/index.js
 ```
-
-## API Capabilities
-
-This server integrates with the Redmine REST API and supports:
-
-- Reading and filtering issues
-- Creating new issues
-- Managing project information
-- Time tracking and logging
-- Generating reports and summaries
-
-## Configuration
-
-The server requires these environment variables:
-
-- `REDMINE_URL`: Your Redmine instance URL
-- `REDMINE_API_KEY`: Your Redmine API key (get this from your Redmine user
-  account settings)
-
-## Troubleshooting
-
-1. **API Key Issues**: Ensure your Redmine API key is valid and has the
-   necessary permissions
-2. **Network Connectivity**: Verify the Redmine URL is accessible
-3. **Permissions**: Make sure the API key has access to the projects you want to
-   interact with
-
-## License
-
-MIT
