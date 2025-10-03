@@ -7,19 +7,19 @@
  * Base interface for all request arguments
  */
 export interface BaseRequestArgs {
-  limit?: number;
+  limit?: number | undefined;
 }
 
 /**
  * Arguments for getting issues from Redmine
  */
 export interface GetIssuesArgs {
-  project_id?: string;
-  assigned_to_id?: string;
-  status_id?: string;
-  limit?: number;
-  issue_id?: string; // Single issue ID or comma-separated list
-  subject?: string; // Search in issue subject/title
+  project_id?: string | undefined;
+  assigned_to_id?: string | undefined;
+  status_id?: string | undefined;
+  limit?: number | undefined;
+  issue_id?: string | undefined; // Single issue ID or comma-separated list
+  subject?: string | undefined; // Search in issue subject/title
 }
 
 export interface GetIssueByIdArgs {
@@ -27,11 +27,18 @@ export interface GetIssueByIdArgs {
 }
 
 /**
+ * Arguments for getting time tracking activities
+ */
+export interface GetTimeActivitiesArgs {
+  project_id?: number | undefined;
+}
+
+/**
  * Arguments for getting projects from Redmine
  */
 export interface GetProjectsArgs extends BaseRequestArgs {
-  name?: string;
-  include?: string;
+  name?: string | undefined;
+  include?: string | undefined;
 }
 
 /**
@@ -40,21 +47,23 @@ export interface GetProjectsArgs extends BaseRequestArgs {
 export interface CreateIssueArgs {
   project_id: string;
   subject: string;
-  description?: string;
-  priority_id?: number;
-  assigned_to_id?: number;
-  tracker_id?: number;
-  category_id?: number;
-  fixed_version_id?: number;
-  start_date?: string;
-  due_date?: string;
-  estimated_hours?: number;
-  done_ratio?: number;
-  parent_issue_id?: number;
-  custom_fields?: Array<{
-    id: number;
-    value: string | number | boolean;
-  }>;
+  description?: string | undefined;
+  priority_id?: number | undefined;
+  assigned_to_id?: number | undefined;
+  tracker_id?: number | undefined;
+  category_id?: number | undefined;
+  fixed_version_id?: number | undefined;
+  start_date?: string | undefined;
+  due_date?: string | undefined;
+  estimated_hours?: number | undefined;
+  done_ratio?: number | undefined;
+  parent_issue_id?: number | undefined;
+  custom_fields?:
+    | Array<{
+        id: number;
+        value: string | number | boolean;
+      }>
+    | undefined;
 }
 
 /**
@@ -62,72 +71,76 @@ export interface CreateIssueArgs {
  */
 export interface UpdateIssueArgs {
   issue_id: number;
-  subject?: string;
-  description?: string;
-  priority_id?: number;
-  assigned_to_id?: number;
-  tracker_id?: number;
-  category_id?: number;
-  fixed_version_id?: number;
-  start_date?: string;
-  due_date?: string;
-  estimated_hours?: number;
-  done_ratio?: number;
-  parent_issue_id?: number;
-  status_id?: number;
-  notes?: string;
-  custom_fields?: Array<{
-    id: number;
-    value: string | number | boolean;
-  }>;
+  subject?: string | undefined;
+  description?: string | undefined;
+  priority_id?: number | undefined;
+  assigned_to_id?: number | undefined;
+  tracker_id?: number | undefined;
+  category_id?: number | undefined;
+  fixed_version_id?: number | undefined;
+  start_date?: string | undefined;
+  due_date?: string | undefined;
+  estimated_hours?: number | undefined;
+  done_ratio?: number | undefined;
+  parent_issue_id?: number | undefined;
+  status_id?: number | undefined;
+  notes?: string | undefined;
+  custom_fields?:
+    | Array<{
+        id: number;
+        value: string | number | boolean;
+      }>
+    | undefined;
 }
 
 /**
  * Arguments for getting time entries from Redmine
  */
 export interface GetTimeEntriesArgs extends BaseRequestArgs {
-  project_id?: string;
-  issue_id?: string;
-  user_id?: string;
-  activity_id?: string;
-  from?: string;
-  to?: string;
-  spent_on?: string;
+  project_id?: string | undefined;
+  issue_id?: string | undefined;
+  user_id?: string | undefined;
+  activity_id?: string | undefined;
+  from?: string | undefined;
+  to?: string | undefined;
+  spent_on?: string | undefined;
 }
 
 /**
  * Arguments for logging time in Redmine
  */
 export interface LogTimeArgs {
-  issue_id?: number;
-  project_id?: number;
+  issue_id?: number | undefined;
+  project_id?: number | undefined;
   hours: number;
-  comments?: string;
-  spent_on?: string;
-  activity_id?: number;
-  custom_fields?: Array<{
-    id: number;
-    value: string | number | boolean;
-  }>;
+  comments?: string | undefined;
+  spent_on?: string | undefined;
+  activity_id: number;
+  custom_fields?:
+    | Array<{
+        id: number;
+        value: string | number | boolean;
+      }>
+    | undefined;
 }
 
 /**
  * Arguments for getting current user information
  */
 export interface GetCurrentUserArgs {
-  include?: string;
+  include?: string | undefined;
 }
 
 /**
  * Arguments for prompt generation
  */
 export interface PromptArgs {
-  project_id?: string;
-  user_id?: string;
-  from_date?: string;
-  to_date?: string;
-  issue_id?: string;
-  activity_id?: string;
+  project_id?: string | undefined;
+  user_id?: string | undefined;
+  from_date?: string | undefined;
+  to_date?: string | undefined;
+  issue_id?: string | undefined;
+  activity_id?: string | undefined;
 }
 
 /**

@@ -1,14 +1,8 @@
 #!/usr/bin/env node
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  CallToolRequestSchema,
-  ListResourcesRequestSchema,
-  ReadResourceRequestSchema,
-  ListPromptsRequestSchema,
-  GetPromptRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
 import axios, { type AxiosInstance } from "axios";
 import { config } from "./config/index.js";
 import type {
@@ -18,8 +12,8 @@ import type {
   UpdateIssueArgs,
   GetIssueByIdArgs,
   GetTimeEntriesArgs,
+  GetTimeActivitiesArgs,
   LogTimeArgs,
-  PromptArgs,
   RedmineProject,
 } from "./types/index.js";
 
@@ -30,7 +24,7 @@ import type {
  * standardized tools, resources, and prompts for AI assistants and other clients.
  */
 class RedmineMCPServer {
-  private server: Server;
+  private server: McpServer;
   private apiClient: AxiosInstance;
   private baseUrl: string;
   private apiKey: string;
@@ -56,283 +50,145 @@ class RedmineMCPServer {
       timeout: config.redmine.timeout,
     });
 
-    // Define tools statically as an object keyed by tool name
-    const tools = {
-      get_issues: {
-        name: "get_issues",
+    // Initialize MCP server
+    this.server = new McpServer({
+      name: config.server.name,
+      version: config.server.version,
+    });
+
+    // Register all Redmine tools using registerTool and zod schemas
+    this.server.registerTool(
+      "get_issues",
+      {
+        title: "Get Issues",
         description: "Get issues from Redmine with optional filtering",
         inputSchema: {
-          type: "object",
-          properties: {
-            project_id: {
-              type: "string",
-              description: "Project ID or identifier to filter issues",
-            },
-            status_id: {
-              type: "string",
-              description: "Status ID to filter issues (e.g., 'open', 'closed', or specific ID)",
-            },
-            assigned_to_id: {
-              type: "string",
-              description: "User ID to filter issues assigned to specific user",
-            },
-            limit: {
-              type: "number",
-              description: "Maximum number of issues to return",
-              default: 25,
-            },
-            issue_id: {
-              type: "string",
-              description: "Single issue ID or comma-separated list of issue IDs",
-            },
-            subject: {
-              type: "string",
-              description: "Search for issues containing this text in the subject/title",
-            },
-          },
+          project_id: z.string().optional(),
+          status_id: z.string().optional(),
+          assigned_to_id: z.string().optional(),
+          limit: z.number().optional(),
+          issue_id: z.string().optional(),
+          subject: z.string().optional(),
         },
       },
-      get_projects: {
-        name: "get_projects",
-        description: "Get mapping of project names to their IDs from Redmine",
-        inputSchema: {
-          type: "object",
-          properties: {
-            limit: {
-              type: "number",
-              description: "Maximum number of projects to return",
-              default: 100,
-            },
-            name: {
-              type: "string",
-              description: "Search for projects containing this name (case-insensitive)",
-            },
-          },
-        },
-      },
-      get_issue_by_id: {
-        name: "get_issue_by_id",
-        description: "Get a specific issue by its ID from Redmine",
-        inputSchema: {
-          type: "object",
-          properties: {
-            issue_id: {
-              type: "number",
-              description: "The ID of the issue to retrieve",
-            },
-          },
-          required: ["issue_id"],
-        },
-      },
-      create_issue: {
-        name: "create_issue",
-        description: "Create a new issue in Redmine",
-        inputSchema: {
-          type: "object",
-          properties: {
-            project_id: {
-              type: "string",
-              description: "Project ID or identifier where to create the issue",
-            },
-            subject: {
-              type: "string",
-              description: "Issue subject/title",
-            },
-            description: {
-              type: "string",
-              description: "Issue description",
-            },
-            priority_id: {
-              type: "number",
-              description: "Priority ID",
-            },
-            assigned_to_id: {
-              type: "number",
-              description: "User ID to assign the issue to",
-            },
-          },
-          required: ["project_id", "subject"],
-        },
-      },
-      update_issue: {
-        name: "update_issue",
-        description: "Update an existing issue in Redmine",
-        inputSchema: {
-          type: "object",
-          properties: {
-            issue_id: {
-              type: "number",
-              description: "Issue ID to update",
-            },
-            subject: {
-              type: "string",
-              description: "Issue subject/title",
-            },
-            description: {
-              type: "string",
-              description: "Issue description",
-            },
-            priority_id: {
-              type: "number",
-              description: "Priority ID",
-            },
-            assigned_to_id: {
-              type: "number",
-              description: "User ID to assign the issue to",
-            },
-            status_id: {
-              type: "number",
-              description: "Status ID",
-            },
-            done_ratio: {
-              type: "number",
-              description: "Completion percentage (0-100)",
-            },
-            notes: {
-              type: "string",
-              description: "Notes to add to the issue (visible in issue history)",
-            },
-          },
-          required: ["issue_id"],
-        },
-      },
-      get_time_entries: {
-        name: "get_time_entries",
-        description: "Get time entries from Redmine",
-        inputSchema: {
-          type: "object",
-          properties: {
-            project_id: {
-              type: "string",
-              description: "Project ID to filter time entries",
-            },
-            issue_id: {
-              type: "string",
-              description: "Issue ID to filter time entries",
-            },
-            user_id: {
-              type: "string",
-              description: "User ID to filter time entries",
-            },
-            from: {
-              type: "string",
-              description: "Start date (YYYY-MM-DD format)",
-            },
-            to: {
-              type: "string",
-              description: "End date (YYYY-MM-DD format)",
-            },
-            limit: {
-              type: "number",
-              description: "Maximum number of time entries to return",
-              default: 25,
-            },
-          },
-        },
-      },
-      get_time_activities: {
-        name: "get_time_activities",
-        description:
-          "Get available time tracking activities for a project or globally. Use this before logging time to get valid activity IDs.",
-        inputSchema: {
-          type: "object",
-          properties: {
-            project_id: {
-              type: "number",
-              description:
-                "Project ID to get project-specific activities. If omitted, returns global activities.",
-            },
-          },
-        },
-      },
-      log_time: {
-        name: "log_time",
-        description:
-          "Log time spent on an issue or project. Activity ID is required - use get_time_activities first to see available options.",
-        inputSchema: {
-          type: "object",
-          properties: {
-            issue_id: {
-              type: "number",
-              description: "Issue ID to log time against",
-            },
-            project_id: {
-              type: "number",
-              description: "Project ID to log time against",
-            },
-            hours: {
-              type: "number",
-              description: "Hours to log",
-            },
-            comments: {
-              type: "string",
-              description: "Comments for the time entry",
-            },
-            spent_on: {
-              type: "string",
-              description: "Date when time was spent (YYYY-MM-DD format, defaults to today)",
-            },
-            activity_id: {
-              type: "number",
-              description:
-                "Activity ID (required). Use get_time_activities tool to get valid IDs for the project.",
-            },
-          },
-          required: ["hours", "activity_id"],
-        },
-      },
-      get_current_user: {
-        name: "get_current_user",
-        description: "Get information about the current user (based on API token)",
-        inputSchema: {
-          type: "object",
-          properties: {},
-        },
-      },
-    };
-
-    // Initialize MCP server with static tools as an object
-    this.server = new Server(
-      {
-        name: config.server.name,
-        version: config.server.version,
-      },
-      {
-        capabilities: {
-          tools,
-          resources: {},
-          prompts: {},
-        },
-      },
+      async (args: GetIssuesArgs) => await this.getIssues(args),
     );
 
-    // Register tool call handler directly in constructor
-    this.server.setRequestHandler(CallToolRequestSchema, async request => {
-      const { name, arguments: args } = request.params;
+    this.server.registerTool(
+      "get_projects",
+      {
+        title: "Get Projects",
+        description: "Get mapping of project names to their IDs from Redmine",
+        inputSchema: {
+          limit: z.number().optional(),
+          name: z.string().optional(),
+        },
+      },
+      async (args: GetProjectsArgs) => await this.getProjects(args),
+    );
 
-      switch (name) {
-        case "get_issues":
-          return await this.getIssues((args || {}) as GetIssuesArgs);
-        case "get_projects":
-          return await this.getProjects((args || {}) as GetProjectsArgs);
-        case "get_issue_by_id":
-          return await this.getIssueById((args || {}) as unknown as GetIssueByIdArgs);
-        case "create_issue":
-          return await this.createIssue((args || {}) as unknown as CreateIssueArgs);
-        case "update_issue":
-          return await this.updateIssue((args || {}) as unknown as UpdateIssueArgs);
-        case "get_time_entries":
-          return await this.getTimeEntries((args || {}) as GetTimeEntriesArgs);
-        case "get_time_activities":
-          return await this.getTimeActivities((args || {}) as { project_id?: number });
-        case "log_time":
-          return await this.logTime((args || {}) as unknown as LogTimeArgs);
-        case "get_current_user":
-          return await this.getCurrentUser();
-        default:
-          throw new Error(`Unknown tool: ${name}`);
-      }
-    });
+    this.server.registerTool(
+      "get_issue_by_id",
+      {
+        title: "Get Issue By ID",
+        description: "Get a specific issue by its ID from Redmine",
+        inputSchema: {
+          issue_id: z.number(),
+        },
+      },
+      async (args: GetIssueByIdArgs) => await this.getIssueById(args),
+    );
+
+    this.server.registerTool(
+      "create_issue",
+      {
+        title: "Create Issue",
+        description: "Create a new issue in Redmine",
+        inputSchema: {
+          project_id: z.string(),
+          subject: z.string(),
+          description: z.string().optional(),
+          priority_id: z.number().optional(),
+          assigned_to_id: z.number().optional(),
+        },
+      },
+      async (args: CreateIssueArgs) => await this.createIssue(args),
+    );
+
+    this.server.registerTool(
+      "update_issue",
+      {
+        title: "Update Issue",
+        description: "Update an existing issue in Redmine",
+        inputSchema: {
+          issue_id: z.number(),
+          subject: z.string().optional(),
+          description: z.string().optional(),
+          priority_id: z.number().optional(),
+          assigned_to_id: z.number().optional(),
+          status_id: z.number().optional(),
+          done_ratio: z.number().optional(),
+          notes: z.string().optional(),
+        },
+      },
+      async (args: UpdateIssueArgs) => await this.updateIssue(args),
+    );
+
+    this.server.registerTool(
+      "get_time_entries",
+      {
+        title: "Get Time Entries",
+        description: "Get time entries from Redmine",
+        inputSchema: {
+          project_id: z.string().optional(),
+          issue_id: z.string().optional(),
+          user_id: z.string().optional(),
+          from: z.string().optional(),
+          to: z.string().optional(),
+          limit: z.number().optional(),
+        },
+      },
+      async (args: GetTimeEntriesArgs) => await this.getTimeEntries(args),
+    );
+
+    this.server.registerTool(
+      "get_time_activities",
+      {
+        title: "Get Time Activities",
+        description: "Get available time tracking activities for a project or globally.",
+        inputSchema: {
+          project_id: z.number().optional(),
+        },
+      },
+      async (args: GetTimeActivitiesArgs) => await this.getTimeActivities(args),
+    );
+
+    this.server.registerTool(
+      "log_time",
+      {
+        title: "Log Time",
+        description: "Log time spent on an issue or project.",
+        inputSchema: {
+          issue_id: z.number().optional(),
+          project_id: z.number().optional(),
+          hours: z.number(),
+          comments: z.string().optional(),
+          spent_on: z.string().optional(),
+          activity_id: z.number(),
+        },
+      },
+      async (args: LogTimeArgs) => await this.logTime(args),
+    );
+
+    this.server.registerTool(
+      "get_current_user",
+      {
+        title: "Get Current User",
+        description: "Get information about the current user (based on API token)",
+        inputSchema: {},
+      },
+      async () => await this.getCurrentUser(),
+    );
 
     this.setupHandlers();
   }
@@ -350,106 +206,38 @@ class RedmineMCPServer {
 
     // ...existing code...
 
-    // Handle list resources request
-    this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
-      return {
-        resources: [
-          {
-            uri: "redmine://projects",
-            name: "Projects List",
-            description: "List of all accessible Redmine projects",
-            mimeType: "application/json",
-          },
-          {
-            uri: "redmine://issues/recent",
-            name: "Recent Issues",
-            description: "Recently updated issues across all projects",
-            mimeType: "application/json",
-          },
-          {
-            uri: "redmine://time_entries/recent",
-            name: "Recent Time Entries",
-            description: "Recently logged time entries",
-            mimeType: "application/json",
-          },
-        ],
-      };
-    });
+    // Register MCP resources using correct registerResource signature
+    this.server.registerResource(
+      "Projects List",
+      "redmine://projects",
+      {
+        description: "List of all accessible Redmine projects",
+        mimeType: "application/json",
+      },
+      async () => await this.getProjectsResource(),
+    );
 
-    // Handle read resource request
-    this.server.setRequestHandler(ReadResourceRequestSchema, async request => {
-      const { uri } = request.params;
+    this.server.registerResource(
+      "Recent Issues",
+      "redmine://issues/recent",
+      {
+        description: "Recently updated issues across all projects",
+        mimeType: "application/json",
+      },
+      async () => await this.getRecentIssuesResource(),
+    );
 
-      switch (uri) {
-        case "redmine://projects":
-          return await this.getProjectsResource();
-        case "redmine://issues/recent":
-          return await this.getRecentIssuesResource();
-        case "redmine://time_entries/recent":
-          return await this.getRecentTimeEntriesResource();
-        default:
-          throw new Error(`Unknown resource: ${uri}`);
-      }
-    });
+    this.server.registerResource(
+      "Recent Time Entries",
+      "redmine://time_entries/recent",
+      {
+        description: "Recently logged time entries",
+        mimeType: "application/json",
+      },
+      async () => await this.getRecentTimeEntriesResource(),
+    );
 
-    // Handle list prompts request
-    this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
-      return {
-        prompts: [
-          {
-            name: "issue_summary",
-            description: "Generate a summary of project issues and their status",
-            arguments: [
-              {
-                name: "project_id",
-                description: "Project ID to summarize",
-                required: true,
-              },
-            ],
-          },
-          {
-            name: "time_report",
-            description: "Generate a time tracking report",
-            arguments: [
-              {
-                name: "project_id",
-                description: "Project ID for the report",
-                required: false,
-              },
-              {
-                name: "user_id",
-                description: "User ID for the report",
-                required: false,
-              },
-              {
-                name: "from_date",
-                description: "Start date for the report (YYYY-MM-DD)",
-                required: false,
-              },
-              {
-                name: "to_date",
-                description: "End date for the report (YYYY-MM-DD)",
-                required: false,
-              },
-            ],
-          },
-        ],
-      };
-    });
-
-    // Handle get prompt request
-    this.server.setRequestHandler(GetPromptRequestSchema, async request => {
-      const { name, arguments: args } = request.params;
-
-      switch (name) {
-        case "issue_summary":
-          return this.getIssueSummaryPrompt((args || {}) as PromptArgs);
-        case "time_report":
-          return this.getTimeReportPrompt((args || {}) as PromptArgs);
-        default:
-          throw new Error(`Unknown prompt: ${name}`);
-      }
-    });
+    // TODO: Register prompts using modular API if supported (see next step)
   }
 
   // Tool implementations
@@ -726,9 +514,9 @@ class RedmineMCPServer {
    * @param args.project_id - Project ID to get project-specific activities (optional)
    * @returns Promise resolving to available time tracking activities
    */
-  private async getTimeActivities(args: {
-    project_id?: number;
-  }): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  private async getTimeActivities(
+    args: GetTimeActivitiesArgs,
+  ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
       let response;
 
@@ -948,93 +736,6 @@ class RedmineMCPServer {
    * @param args.project_id - Project ID to generate summary for (required)
    * @returns Formatted prompt for issue summarization
    */
-  private getIssueSummaryPrompt(args: PromptArgs): {
-    description: string;
-    messages: Array<{ role: "user"; content: { type: "text"; text: string } }>;
-  } {
-    const projectId = args.project_id;
-    if (!projectId) {
-      throw new Error("project_id is required for issue summary");
-    }
-
-    return {
-      description: `Generate a comprehensive summary of issues for Redmine project ID ${projectId}`,
-      messages: [
-        {
-          role: "user" as const,
-          content: {
-            type: "text" as const,
-            text: `Please generate a comprehensive summary of issues for Redmine project ID ${projectId}. Use the get_issues tool to fetch the issues data and then provide:
-
-1. **Project Overview**: Brief description of the project
-2. **Issue Statistics**: Total count, breakdown by status, priority distribution
-3. **Recent Activity**: Most recently updated issues
-4. **Assignment Overview**: Who is assigned to what
-5. **Key Issues**: Highlight any high-priority or overdue items
-6. **Recommendations**: Suggest any actions that might be needed
-
-Format the response in a clear, organized manner that would be useful for a project manager or team lead.`,
-          },
-        },
-      ],
-    };
-  }
-
-  /**
-   * Generates time report prompt for AI assistants
-   *
-   * @param args - Prompt parameters
-   * @param args.project_id - Project ID to generate report for
-   * @param args.user_id - User ID to filter time entries by
-   * @param args.from_date - Start date for time report
-   * @param args.to_date - End date for time report
-   * @returns Formatted prompt for time reporting
-   */
-  private getTimeReportPrompt(args: PromptArgs): {
-    description: string;
-    messages: Array<{ role: "user"; content: { type: "text"; text: string } }>;
-  } {
-    const projectId = args.project_id;
-    const userId = args.user_id;
-    const fromDate = args.from_date;
-    const toDate = args.to_date;
-
-    let timeFilter = "";
-    if (projectId) timeFilter += ` for project ID ${projectId}`;
-    if (userId) timeFilter += ` for user ID ${userId}`;
-    if (fromDate) timeFilter += ` from ${fromDate}`;
-    if (toDate) timeFilter += ` to ${toDate}`;
-
-    return {
-      description: `Generate a time tracking report${timeFilter}`,
-      messages: [
-        {
-          role: "user" as const,
-          content: {
-            type: "text" as const,
-            text: `Please generate a time tracking report${timeFilter}. Use the get_time_entries tool to fetch the time entry data and then provide:
-
-1. **Summary Statistics**: 
-   - Total hours logged
-   - Average hours per day/week
-   - Number of entries
-
-2. **Breakdown by Project**: Hours spent on each project (if multiple projects)
-
-3. **Breakdown by Activity**: Hours spent on different activity types
-
-4. **Daily/Weekly Patterns**: When most time is being logged
-
-5. **Issue Analysis**: Time spent on specific issues (if applicable)
-
-6. **Utilization Insights**: Analysis of time allocation and productivity patterns
-
-Format the report in a professional manner suitable for time tracking review or billing purposes.`,
-          },
-        },
-      ],
-    };
-  }
 
   /**
    * Starts the MCP server and connects to stdio transport

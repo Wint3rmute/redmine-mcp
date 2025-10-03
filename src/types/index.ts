@@ -44,6 +44,7 @@ export type {
   UpdateIssueArgs,
   GetIssueByIdArgs,
   GetTimeEntriesArgs,
+  GetTimeActivitiesArgs,
   LogTimeArgs,
   GetCurrentUserArgs,
   PromptArgs,
