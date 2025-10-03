@@ -119,7 +119,7 @@ class RedmineMCPServer {
       "update_issue",
       {
         title: "Update Issue",
-        description: "Update an existing issue in Redmine",
+        description: "Update an existing issue in Redmine. Description should be provided in Textile markup.",
         inputSchema: {
           issue_id: z.number(),
           subject: z.string().optional(),
