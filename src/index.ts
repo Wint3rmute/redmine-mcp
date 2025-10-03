@@ -306,21 +306,7 @@ class RedmineMCPServer {
       },
     );
 
-    this.setupHandlers();
-  }
-
-  /**
-   * Sets up MCP protocol handlers for tools, resources, and prompts
-   *
-   * Configures the server to handle:
-   * - Tool execution (get_issues, create_issue, etc.)
-   * - Resource access (projects, recent issues, time entries)
-   * - Prompt responses (issue summaries, time reports)
-   */
-  private setupHandlers(): void {
-    // ...existing code...
-
-    // Handle call tool request
+    // Register tool call handler directly in constructor
     this.server.setRequestHandler(CallToolRequestSchema, async request => {
       const { name, arguments: args } = request.params;
 
@@ -347,6 +333,22 @@ class RedmineMCPServer {
           throw new Error(`Unknown tool: ${name}`);
       }
     });
+
+    this.setupHandlers();
+  }
+
+  /**
+   * Sets up MCP protocol handlers for tools, resources, and prompts
+   *
+   * Configures the server to handle:
+   * - Tool execution (get_issues, create_issue, etc.)
+   * - Resource access (projects, recent issues, time entries)
+   * - Prompt responses (issue summaries, time reports)
+   */
+  private setupHandlers(): void {
+    // ...existing code...
+
+    // ...existing code...
 
     // Handle list resources request
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
