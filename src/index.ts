@@ -57,6 +57,7 @@ class RedmineMCPServer {
     });
 
     // Register all Redmine tools using registerTool and zod schemas
+    // Calling registerTool is constructor is recommended by the library docs
     this.server.registerTool(
       "get_issues",
       {
