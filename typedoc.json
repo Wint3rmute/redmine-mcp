@@ -4,7 +4,7 @@
   "name": "Redmine MCP Server Documentation",
   "includeVersion": true,
   "readme": "README.md",
-  "plugin": [],
+  "plugin": ["typedoc-material-theme"],
   "entryPointStrategy": "expand",
   "exclude": ["**/node_modules/**", "**/build/**", "**/dist/**"],
   "excludePrivate": false,
