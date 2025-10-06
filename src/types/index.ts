@@ -35,7 +35,5 @@ export type {
 
 export { createSuccessResponse, createErrorResponse } from "./mcp.js";
 
-// Request argument types
-export type { BaseRequestArgs, PromptArgs, ToolArgs } from "./requests.js";
-
-export { isPromptArgs } from "./requests.js";
+// Note: Request argument types are now defined and exported directly from src/index.ts
+// as they are derived from Zod schemas for compile-time type safety.
