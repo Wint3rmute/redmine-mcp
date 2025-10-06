@@ -79,6 +79,21 @@ contents:
 }
 ```
 
+## Documentation
+
+API documentation is automatically generated from JSDoc comments and deployed to
+GitHub Pages:
+
+📚 **[View API Documentation](https://wint3rmute.github.io/redmine-mcp/)**
+
+To generate documentation locally:
+
+```bash
+npm run docs
+```
+
+The generated documentation will be available in the `docs/` directory.
+
 ## Development
 
 ### Building
