@@ -38,7 +38,6 @@ export { createSuccessResponse, createErrorResponse } from "./mcp.js";
 // Request argument types
 export type {
   BaseRequestArgs,
-  GetTimeEntriesArgs,
   GetTimeActivitiesArgs,
   LogTimeArgs,
   GetCurrentUserArgs,
@@ -46,9 +45,4 @@ export type {
   ToolArgs,
 } from "./requests.js";
 
-export {
-  isLogTimeArgs,
-  isGetTimeEntriesArgs,
-  isGetCurrentUserArgs,
-  isPromptArgs,
-} from "./requests.js";
+export { isLogTimeArgs, isGetCurrentUserArgs, isPromptArgs } from "./requests.js";

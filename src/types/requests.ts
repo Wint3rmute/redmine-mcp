@@ -18,19 +18,6 @@ export interface GetTimeActivitiesArgs {
 }
 
 /**
- * Arguments for getting time entries from Redmine
- */
-export interface GetTimeEntriesArgs extends BaseRequestArgs {
-  project_id?: string | undefined;
-  issue_id?: string | undefined;
-  user_id?: string | undefined;
-  activity_id?: string | undefined;
-  from?: string | undefined;
-  to?: string | undefined;
-  spent_on?: string | undefined;
-}
-
-/**
  * Arguments for logging time in Redmine
  */
 export interface LogTimeArgs {
@@ -70,7 +57,7 @@ export interface PromptArgs {
 /**
  * Union type of all possible tool arguments
  */
-export type ToolArgs = GetTimeEntriesArgs | LogTimeArgs | GetCurrentUserArgs | PromptArgs;
+export type ToolArgs = LogTimeArgs | GetCurrentUserArgs | PromptArgs;
 
 /**
  * Type guard functions for runtime type checking
@@ -87,16 +74,6 @@ export function isLogTimeArgs(args: unknown): args is LogTimeArgs {
 
   const typed = args as Record<string, unknown>;
   return typeof typed["hours"] === "number" && typed["hours"] > 0;
-}
-
-/**
- * Validates arguments for getting time entries
- *
- * @param args - Arguments to validate as GetTimeEntriesArgs
- * @returns True if args match GetTimeEntriesArgs interface
- */
-export function isGetTimeEntriesArgs(args: unknown): args is GetTimeEntriesArgs {
-  return typeof args === "object" && args !== null;
 }
 
 /**

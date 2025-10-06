@@ -5,12 +5,7 @@ import { z } from "zod";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import axios, { type AxiosInstance } from "axios";
 import { config } from "./config/index.js";
-import type {
-  GetTimeEntriesArgs,
-  GetTimeActivitiesArgs,
-  LogTimeArgs,
-  RedmineProject,
-} from "./types/index.js";
+import type { GetTimeActivitiesArgs, LogTimeArgs, RedmineProject } from "./types/index.js";
 
 /**
  * Zod schema shape for get_issues tool arguments
@@ -122,6 +117,25 @@ const updateIssueSchemaShape = {
 export type UpdateIssueArgs = z.infer<z.ZodObject<typeof updateIssueSchemaShape>>;
 
 /**
+ * Zod schema shape for get_time_entries tool arguments
+ */
+const getTimeEntriesSchemaShape = {
+  project_id: z.string().optional(),
+  issue_id: z.string().optional(),
+  user_id: z.string().optional(),
+  activity_id: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  spent_on: z.string().optional(),
+  limit: z.number().optional(),
+} as const;
+
+/**
+ * Type for get_time_entries tool arguments, derived from Zod schema
+ */
+export type GetTimeEntriesArgs = z.infer<z.ZodObject<typeof getTimeEntriesSchemaShape>>;
+
+/**
  * Redmine MCP Server - Provides Model Context Protocol interface for Redmine API
  *
  * This class implements an MCP server that exposes Redmine functionality through
@@ -218,14 +232,7 @@ class RedmineMCPServer {
       {
         title: "Get Time Entries",
         description: "Get time entries from Redmine",
-        inputSchema: {
-          project_id: z.string().optional(),
-          issue_id: z.string().optional(),
-          user_id: z.string().optional(),
-          from: z.string().optional(),
-          to: z.string().optional(),
-          limit: z.number().optional(),
-        },
+        inputSchema: getTimeEntriesSchemaShape,
       },
       async (args: GetTimeEntriesArgs) => await this.getTimeEntries(args),
     );
