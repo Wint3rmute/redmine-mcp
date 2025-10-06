@@ -11,13 +11,6 @@ export interface BaseRequestArgs {
 }
 
 /**
- * Arguments for getting current user information
- */
-export interface GetCurrentUserArgs {
-  include?: string | undefined;
-}
-
-/**
  * Arguments for prompt generation
  */
 export interface PromptArgs {
@@ -32,21 +25,11 @@ export interface PromptArgs {
 /**
  * Union type of all possible tool arguments
  */
-export type ToolArgs = GetCurrentUserArgs | PromptArgs;
+export type ToolArgs = PromptArgs;
 
 /**
  * Type guard functions for runtime type checking
  *
- * Validates arguments for getting current user
- *
- * @param args - Arguments to validate as GetCurrentUserArgs
- * @returns True if args match GetCurrentUserArgs interface
- */
-export function isGetCurrentUserArgs(args: unknown): args is GetCurrentUserArgs {
-  return typeof args === "object" && args !== null;
-}
-
-/**
  * Validates arguments for prompt generation
  *
  * @param args - Arguments to validate as PromptArgs

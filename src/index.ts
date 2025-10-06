@@ -173,6 +173,18 @@ const logTimeSchemaShape = {
 export type LogTimeArgs = z.infer<z.ZodObject<typeof logTimeSchemaShape>>;
 
 /**
+ * Zod schema shape for get_current_user tool arguments
+ */
+const getCurrentUserSchemaShape = {
+  include: z.string().optional(),
+} as const;
+
+/**
+ * Type for get_current_user tool arguments, derived from Zod schema
+ */
+export type GetCurrentUserArgs = z.infer<z.ZodObject<typeof getCurrentUserSchemaShape>>;
+
+/**
  * Redmine MCP Server - Provides Model Context Protocol interface for Redmine API
  *
  * This class implements an MCP server that exposes Redmine functionality through
@@ -299,9 +311,9 @@ class RedmineMCPServer {
       {
         title: "Get Current User",
         description: "Get information about the current user (based on API token)",
-        inputSchema: {},
+        inputSchema: getCurrentUserSchemaShape,
       },
-      async () => await this.getCurrentUser(),
+      async (args: GetCurrentUserArgs) => await this.getCurrentUser(args),
     );
 
     this.setupHandlers();
@@ -747,11 +759,19 @@ class RedmineMCPServer {
   /**
    * Retrieves information about the current user based on API token
    *
+   * @param args - Arguments for getting current user (optional include parameter)
    * @returns Promise resolving to current user information
    */
-  private async getCurrentUser(): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  private async getCurrentUser(
+    args: GetCurrentUserArgs,
+  ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
-      const response = await this.apiClient.get("/users/current.json");
+      const params: Record<string, string> = {};
+      if (args.include) {
+        params["include"] = args.include;
+      }
+
+      const response = await this.apiClient.get("/users/current.json", { params });
 
       return {
         content: [

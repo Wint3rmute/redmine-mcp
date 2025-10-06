@@ -36,6 +36,6 @@ export type {
 export { createSuccessResponse, createErrorResponse } from "./mcp.js";
 
 // Request argument types
-export type { BaseRequestArgs, GetCurrentUserArgs, PromptArgs, ToolArgs } from "./requests.js";
+export type { BaseRequestArgs, PromptArgs, ToolArgs } from "./requests.js";
 
-export { isGetCurrentUserArgs, isPromptArgs } from "./requests.js";
+export { isPromptArgs } from "./requests.js";
