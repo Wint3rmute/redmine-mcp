@@ -1,7 +1,9 @@
-name: Deploy Documentation
+name: Docs
 
 on:
   push:
+    branches: [master, main]
+  pull_request:
     branches: [master, main]
   workflow_dispatch:
 
@@ -38,12 +40,16 @@ jobs:
         run: npm run docs
 
       - name: Upload artifact
+        # Only upload artifact on pushes to master/main, not on PRs
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./docs
 
   deploy:
     name: Deploy to GitHub Pages
+    # Only deploy on pushes to master/main, not on PRs
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
     needs: build
     runs-on: ubuntu-latest
 
