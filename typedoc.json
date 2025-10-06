@@ -1,0 +1,18 @@
+{
+  "entryPoints": ["src/index.ts"],
+  "out": "docs",
+  "name": "Redmine MCP Server Documentation",
+  "includeVersion": true,
+  "readme": "README.md",
+  "plugin": [],
+  "entryPointStrategy": "expand",
+  "exclude": ["**/node_modules/**", "**/build/**", "**/dist/**"],
+  "excludePrivate": false,
+  "excludeProtected": false,
+  "excludeInternal": false,
+  "hideGenerator": false,
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  }
+}
