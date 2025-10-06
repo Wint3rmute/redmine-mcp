@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "format:src": "prettier --write src/**/*.ts",
-    "docs": "typedoc"
+    "docs": "typedoc",
+    "test:e2e": "tsc && node --test build/e2e.test.js"
   },
   "keywords": [
     "mcp",
