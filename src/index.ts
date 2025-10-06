@@ -6,7 +6,6 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import axios, { type AxiosInstance } from "axios";
 import { config } from "./config/index.js";
 import type {
-  CreateIssueArgs,
   UpdateIssueArgs,
   GetTimeEntriesArgs,
   GetTimeActivitiesArgs,
@@ -56,6 +55,38 @@ const getIssueByIdSchemaShape = {
  * Type for get_issue_by_id tool arguments, derived from Zod schema
  */
 export type GetIssueByIdArgs = z.infer<z.ZodObject<typeof getIssueByIdSchemaShape>>;
+
+/**
+ * Zod schema shape for create_issue tool arguments
+ */
+const createIssueSchemaShape = {
+  project_id: z.string(),
+  subject: z.string(),
+  description: z.string().optional(),
+  priority_id: z.number().optional(),
+  assigned_to_id: z.number().optional(),
+  tracker_id: z.number().optional(),
+  category_id: z.number().optional(),
+  fixed_version_id: z.number().optional(),
+  start_date: z.string().optional(),
+  due_date: z.string().optional(),
+  estimated_hours: z.number().optional(),
+  done_ratio: z.number().optional(),
+  parent_issue_id: z.number().optional(),
+  custom_fields: z
+    .array(
+      z.object({
+        id: z.number(),
+        value: z.union([z.string(), z.number(), z.boolean()]),
+      }),
+    )
+    .optional(),
+} as const;
+
+/**
+ * Type for create_issue tool arguments, derived from Zod schema
+ */
+export type CreateIssueArgs = z.infer<z.ZodObject<typeof createIssueSchemaShape>>;
 
 /**
  * Redmine MCP Server - Provides Model Context Protocol interface for Redmine API
@@ -133,13 +164,7 @@ class RedmineMCPServer {
       {
         title: "Create Issue",
         description: "Create a new issue in Redmine",
-        inputSchema: {
-          project_id: z.string(),
-          subject: z.string(),
-          description: z.string().optional(),
-          priority_id: z.number().optional(),
-          assigned_to_id: z.number().optional(),
-        },
+        inputSchema: createIssueSchemaShape,
       },
       async (args: CreateIssueArgs) => await this.createIssue(args),
     );

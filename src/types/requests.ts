@@ -18,31 +18,6 @@ export interface GetTimeActivitiesArgs {
 }
 
 /**
- * Arguments for creating a new issue in Redmine
- */
-export interface CreateIssueArgs {
-  project_id: string;
-  subject: string;
-  description?: string | undefined;
-  priority_id?: number | undefined;
-  assigned_to_id?: number | undefined;
-  tracker_id?: number | undefined;
-  category_id?: number | undefined;
-  fixed_version_id?: number | undefined;
-  start_date?: string | undefined;
-  due_date?: string | undefined;
-  estimated_hours?: number | undefined;
-  done_ratio?: number | undefined;
-  parent_issue_id?: number | undefined;
-  custom_fields?:
-    | Array<{
-        id: number;
-        value: string | number | boolean;
-      }>
-    | undefined;
-}
-
-/**
  * Arguments for updating an existing issue in Redmine
  */
 export interface UpdateIssueArgs {
@@ -122,31 +97,11 @@ export interface PromptArgs {
 /**
  * Union type of all possible tool arguments
  */
-export type ToolArgs =
-  | CreateIssueArgs
-  | GetTimeEntriesArgs
-  | LogTimeArgs
-  | GetCurrentUserArgs
-  | PromptArgs;
+export type ToolArgs = GetTimeEntriesArgs | LogTimeArgs | GetCurrentUserArgs | PromptArgs;
 
 /**
  * Type guard functions for runtime type checking
  *
- * Validates arguments for creating issues
- *
- * @param args - Arguments to validate as CreateIssueArgs
- * @returns True if args match CreateIssueArgs interface
- */
-export function isCreateIssueArgs(args: unknown): args is CreateIssueArgs {
-  if (typeof args !== "object" || args === null) {
-    return false;
-  }
-
-  const typed = args as Record<string, unknown>;
-  return typeof typed["project_id"] === "string" && typeof typed["subject"] === "string";
-}
-
-/**
  * Validates arguments for updating issues
  *
  * @param args - Arguments to validate as UpdateIssueArgs
