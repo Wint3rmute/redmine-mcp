@@ -4,33 +4,4 @@
  */
 
 // Redmine domain types
-export type {
-  RedmineUser,
-  RedmineStatus,
-  RedminePriority,
-  RedmineProject,
-  RedmineIssue,
-  RedmineActivity,
-  RedmineTimeEntry,
-  RedmineApiResponse,
-  RedmineIssuesResponse,
-  RedmineProjectsResponse,
-  RedmineTimeEntriesResponse,
-  RedmineUserResponse,
-  CreateIssueRequest,
-  CreateTimeEntryRequest,
-} from "./redmine.js";
-
-// MCP protocol types
-export type {
-  ToolResponse,
-  ResourceContents,
-  ToolSchema,
-  ToolPropertySchema,
-  ResourceSchema,
-  PromptSchema,
-  PromptResponse,
-  ToolExecutionContext,
-} from "./mcp.js";
-
-export { createSuccessResponse, createErrorResponse } from "./mcp.js";
+export type { RedmineProject } from "./redmine.js";
