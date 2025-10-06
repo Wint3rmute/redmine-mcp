@@ -31,7 +31,7 @@ logging.
 
 ### Prerequisites
 
-- Node.js 16+
+- Node.js 22+
 - Access to a Redmine instance with API key
 - Redmine REST API enabled
 
