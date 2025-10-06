@@ -20,6 +20,7 @@ export interface GetIssuesArgs {
   limit?: number | undefined;
   issue_id?: string | undefined; // Single issue ID or comma-separated list
   subject?: string | undefined; // Search in issue subject/title
+  parent_id?: string | undefined; // Parent issue ID for filtering child issues
 }
 
 export interface GetIssueByIdArgs {

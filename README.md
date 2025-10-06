@@ -60,7 +60,8 @@ export REDMINE_API_KEY="your_api_key_here"
 
 ### VsCode
 
-Clone this repository and create the file `.vscode/mcp.json` with following contents:
+Clone this repository and create the file `.vscode/mcp.json` with following
+contents:
 
 ```json
 {

@@ -2,7 +2,10 @@
 
 ## Project Overview
 
-This is a **Model Context Protocol (MCP) server** that provides AI assistants like Claude with access to Redmine project management systems. The server is built with TypeScript and exposes Redmine's REST API through MCP tools, resources, and prompts.
+This is a **Model Context Protocol (MCP) server** that provides AI assistants
+like Claude with access to Redmine project management systems. The server is
+built with TypeScript and exposes Redmine's REST API through MCP tools,
+resources, and prompts.
 
 ## Tech Stack
 
@@ -32,28 +35,35 @@ src/
 
 ### TypeScript
 
-1. **Strict mode enabled**: All strict TypeScript checks are active, including `exactOptionalPropertyTypes`
-2. **Explicit `| undefined`**: Optional properties must explicitly include `| undefined` type
+1. **Strict mode enabled**: All strict TypeScript checks are active, including
+   `exactOptionalPropertyTypes`
+2. **Explicit `| undefined`**: Optional properties must explicitly include
+   `| undefined` type
 3. **No implicit any**: All types must be explicitly declared
-4. **ESM modules**: Use `.js` extensions in imports (e.g., `from "./config/index.js"`)
+4. **ESM modules**: Use `.js` extensions in imports (e.g.,
+   `from "./config/index.js"`)
 
 ### Code Style
 
 1. **Idiomatic patterns**: Follow modern TypeScript idioms
 2. **Error handling**: All async operations wrapped in try-catch
 3. **JSDoc comments**: Comprehensive documentation for all public methods
-4. **No side effects in constructors**: EXCEPT tool registration (this is MCP SDK pattern)
+4. **No side effects in constructors**: EXCEPT tool registration (this is MCP
+   SDK pattern)
 
 ### MCP Patterns
 
-1. **Tool registration in constructor**: Tools, resources, and prompts are registered in the constructor (MCP SDK recommendation)
+1. **Tool registration in constructor**: Tools, resources, and prompts are
+   registered in the constructor (MCP SDK recommendation)
 2. **Zod schemas**: All tool inputs use Zod schemas for validation
-3. **Consistent responses**: All tools return `{ content: [{ type: "text", text: string }] }`
+3. **Consistent responses**: All tools return
+   `{ content: [{ type: "text", text: string }] }`
 4. **Private methods**: Tool implementations are private class methods
 
 ### Redmine Integration
 
-1. **Textile format**: Issue descriptions and notes use Redmine's Textile markup (pass through as-is)
+1. **Textile format**: Issue descriptions and notes use Redmine's Textile markup
+   (pass through as-is)
 2. **API key auth**: Authentication via `X-Redmine-API-Key` header
 3. **Environment config**: All credentials loaded from env vars, never hardcoded
 4. **Error wrapping**: Axios errors wrapped with contextual messages
@@ -61,12 +71,14 @@ src/
 ## Development Workflow
 
 ### Building
+
 ```bash
 npm run build          # Compile TypeScript
 npm run dev           # Watch mode
 ```
 
 ### Code Quality
+
 ```bash
 npm run lint          # ESLint check
 npm run lint:fix      # Auto-fix issues
@@ -74,6 +86,7 @@ npm run format        # Prettier format
 ```
 
 ### Testing
+
 ```bash
 npx @modelcontextprotocol/inspector node build/index.js
 ```
@@ -83,6 +96,7 @@ npx @modelcontextprotocol/inspector node build/index.js
 ### Adding a New Tool
 
 1. Define argument types in `src/types/requests.ts`:
+
    ```typescript
    export interface MyToolArgs {
      required_field: string;
@@ -93,6 +107,7 @@ npx @modelcontextprotocol/inspector node build/index.js
 2. Add to type exports in `src/types/index.ts`
 
 3. Register in constructor with Zod schema:
+
    ```typescript
    this.server.registerTool(
      "my_tool",
@@ -104,7 +119,7 @@ npx @modelcontextprotocol/inspector node build/index.js
          optional_field: z.string().optional(),
        },
      },
-     async (args: MyToolArgs) => await this.myTool(args)
+     async (args: MyToolArgs) => await this.myTool(args),
    );
    ```
 
@@ -128,11 +143,13 @@ npx @modelcontextprotocol/inspector node build/index.js
 
 ### Adding a Redmine Type
 
-Add to `src/types/redmine.ts` following existing patterns. Include all relevant fields from Redmine API docs.
+Add to `src/types/redmine.ts` following existing patterns. Include all relevant
+fields from Redmine API docs.
 
 ### Modifying Configuration
 
-Update `src/config/server-config.ts` with new validation logic. Never access `process.env` directly from main code.
+Update `src/config/server-config.ts` with new validation logic. Never access
+`process.env` directly from main code.
 
 ## Security Guidelines
 
@@ -154,15 +171,18 @@ This server follows MCP SDK conventions:
 ## Current Implementation Status
 
 ### Tools (9 implemented)
+
 - get_issues, get_issue_by_id, get_projects, create_issue, update_issue
 - get_time_entries, get_time_activities, log_time, get_current_user
 
 ### Resources (3 implemented)
+
 - redmine://projects
 - redmine://issues/recent
 - redmine://time_entries/recent
 
 ### Features
+
 - ✅ Full TypeScript strict mode
 - ✅ Zod validation at boundaries
 - ✅ Comprehensive error handling

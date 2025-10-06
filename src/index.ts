@@ -70,6 +70,7 @@ class RedmineMCPServer {
           limit: z.number().optional(),
           issue_id: z.string().optional(),
           subject: z.string().optional(),
+          parent_id: z.string().optional(),
         },
       },
       async (args: GetIssuesArgs) => await this.getIssues(args),
@@ -120,7 +121,8 @@ class RedmineMCPServer {
       "update_issue",
       {
         title: "Update Issue",
-        description: "Update an existing issue in Redmine. Description should be provided in Textile markup.",
+        description:
+          "Update an existing issue in Redmine. Description should be provided in Textile markup.",
         inputSchema: {
           issue_id: z.number(),
           subject: z.string().optional(),
@@ -267,6 +269,7 @@ class RedmineMCPServer {
       if (args.limit) params["limit"] = args.limit;
       if (args.issue_id) params["issue_id"] = args.issue_id;
       if (args.subject) params["subject"] = `~${args.subject}`; // Use contains search
+      if (args.parent_id) params["parent_id"] = args.parent_id;
 
       // Sort by priority (descending) by default, then by updated date
       params["sort"] = "priority:desc,updated_on:desc";
