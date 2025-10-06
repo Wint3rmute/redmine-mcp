@@ -20,17 +20,3 @@ export type {
   CreateIssueRequest,
   CreateTimeEntryRequest,
 } from "./redmine.js";
-
-// MCP protocol types
-export type {
-  ToolResponse,
-  ResourceContents,
-  ToolSchema,
-  ToolPropertySchema,
-  ResourceSchema,
-  PromptSchema,
-  PromptResponse,
-  ToolExecutionContext,
-} from "./mcp.js";
-
-export { createSuccessResponse, createErrorResponse } from "./mcp.js";
