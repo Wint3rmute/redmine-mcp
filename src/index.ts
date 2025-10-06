@@ -6,7 +6,6 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import axios, { type AxiosInstance } from "axios";
 import { config } from "./config/index.js";
 import type {
-  UpdateIssueArgs,
   GetTimeEntriesArgs,
   GetTimeActivitiesArgs,
   LogTimeArgs,
@@ -87,6 +86,40 @@ const createIssueSchemaShape = {
  * Type for create_issue tool arguments, derived from Zod schema
  */
 export type CreateIssueArgs = z.infer<z.ZodObject<typeof createIssueSchemaShape>>;
+
+/**
+ * Zod schema shape for update_issue tool arguments
+ */
+const updateIssueSchemaShape = {
+  issue_id: z.number(),
+  subject: z.string().optional(),
+  description: z.string().optional(),
+  priority_id: z.number().optional(),
+  assigned_to_id: z.number().optional(),
+  tracker_id: z.number().optional(),
+  category_id: z.number().optional(),
+  fixed_version_id: z.number().optional(),
+  start_date: z.string().optional(),
+  due_date: z.string().optional(),
+  estimated_hours: z.number().optional(),
+  done_ratio: z.number().optional(),
+  parent_issue_id: z.number().optional(),
+  status_id: z.number().optional(),
+  notes: z.string().optional(),
+  custom_fields: z
+    .array(
+      z.object({
+        id: z.number(),
+        value: z.union([z.string(), z.number(), z.boolean()]),
+      }),
+    )
+    .optional(),
+} as const;
+
+/**
+ * Type for update_issue tool arguments, derived from Zod schema
+ */
+export type UpdateIssueArgs = z.infer<z.ZodObject<typeof updateIssueSchemaShape>>;
 
 /**
  * Redmine MCP Server - Provides Model Context Protocol interface for Redmine API
@@ -175,16 +208,7 @@ class RedmineMCPServer {
         title: "Update Issue",
         description:
           "Update an existing issue in Redmine. Description should be provided in Textile markup.",
-        inputSchema: {
-          issue_id: z.number(),
-          subject: z.string().optional(),
-          description: z.string().optional(),
-          priority_id: z.number().optional(),
-          assigned_to_id: z.number().optional(),
-          status_id: z.number().optional(),
-          done_ratio: z.number().optional(),
-          notes: z.string().optional(),
-        },
+        inputSchema: updateIssueSchemaShape,
       },
       async (args: UpdateIssueArgs) => await this.updateIssue(args),
     );

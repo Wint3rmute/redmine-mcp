@@ -18,33 +18,6 @@ export interface GetTimeActivitiesArgs {
 }
 
 /**
- * Arguments for updating an existing issue in Redmine
- */
-export interface UpdateIssueArgs {
-  issue_id: number;
-  subject?: string | undefined;
-  description?: string | undefined;
-  priority_id?: number | undefined;
-  assigned_to_id?: number | undefined;
-  tracker_id?: number | undefined;
-  category_id?: number | undefined;
-  fixed_version_id?: number | undefined;
-  start_date?: string | undefined;
-  due_date?: string | undefined;
-  estimated_hours?: number | undefined;
-  done_ratio?: number | undefined;
-  parent_issue_id?: number | undefined;
-  status_id?: number | undefined;
-  notes?: string | undefined;
-  custom_fields?:
-    | Array<{
-        id: number;
-        value: string | number | boolean;
-      }>
-    | undefined;
-}
-
-/**
  * Arguments for getting time entries from Redmine
  */
 export interface GetTimeEntriesArgs extends BaseRequestArgs {
@@ -102,21 +75,6 @@ export type ToolArgs = GetTimeEntriesArgs | LogTimeArgs | GetCurrentUserArgs | P
 /**
  * Type guard functions for runtime type checking
  *
- * Validates arguments for updating issues
- *
- * @param args - Arguments to validate as UpdateIssueArgs
- * @returns True if args match UpdateIssueArgs interface
- */
-export function isUpdateIssueArgs(args: unknown): args is UpdateIssueArgs {
-  if (typeof args !== "object" || args === null) {
-    return false;
-  }
-
-  const typed = args as Record<string, unknown>;
-  return typeof typed["issue_id"] === "number" && typed["issue_id"] > 0;
-}
-
-/**
  * Validates arguments for logging time entries
  *
  * @param args - Arguments to validate as LogTimeArgs
