@@ -34,6 +34,3 @@ export type {
 } from "./mcp.js";
 
 export { createSuccessResponse, createErrorResponse } from "./mcp.js";
-
-// Note: Request argument types are now defined and exported directly from src/index.ts
-// as they are derived from Zod schemas for compile-time type safety.

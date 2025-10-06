@@ -10,7 +10,7 @@ resources, and prompts.
 ## Tech Stack
 
 - **Language**: TypeScript with strict mode enabled
-- **Runtime**: Node.js 18+
+- **Runtime**: Node.js 22+
 - **Protocol**: Model Context Protocol (MCP) via `@modelcontextprotocol/sdk`
 - **HTTP Client**: Axios for Redmine REST API communication
 - **Validation**: Zod for runtime type checking at API boundaries
@@ -74,7 +74,6 @@ src/
 
 ```bash
 npm run build          # Compile TypeScript
-npm run dev           # Watch mode
 ```
 
 ### Code Quality
@@ -92,54 +91,6 @@ npx @modelcontextprotocol/inspector node build/index.js
 ```
 
 ## Common Tasks
-
-### Adding a New Tool
-
-1. Define argument types in `src/types/requests.ts`:
-
-   ```typescript
-   export interface MyToolArgs {
-     required_field: string;
-     optional_field?: string | undefined;
-   }
-   ```
-
-2. Add to type exports in `src/types/index.ts`
-
-3. Register in constructor with Zod schema:
-
-   ```typescript
-   this.server.registerTool(
-     "my_tool",
-     {
-       title: "My Tool",
-       description: "What this tool does",
-       inputSchema: {
-         required_field: z.string(),
-         optional_field: z.string().optional(),
-       },
-     },
-     async (args: MyToolArgs) => await this.myTool(args),
-   );
-   ```
-
-4. Implement private method:
-   ```typescript
-   private async myTool(args: MyToolArgs): Promise<ToolResponse> {
-     try {
-       const response = await this.apiClient.get('/endpoint', { params });
-       return {
-         content: [{
-           type: "text" as const,
-           text: JSON.stringify(response.data, null, 2),
-         }],
-       };
-     } catch (error) {
-       console.error("Error in myTool:", error);
-       throw new Error(`Failed to execute myTool: ${error}`);
-     }
-   }
-   ```
 
 ### Adding a Redmine Type
 
