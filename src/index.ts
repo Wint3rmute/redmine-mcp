@@ -3,9 +3,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import axios, { type AxiosInstance } from "axios";
 import { config } from "./config/index.js";
 import type { RedmineProject } from "./types/index.js";
+import { createRedmineClient } from "./utils/index.js";
 
 /**
  * Zod schema shape for get_issues tool arguments
@@ -192,9 +192,7 @@ export type GetCurrentUserArgs = z.infer<z.ZodObject<typeof getCurrentUserSchema
  */
 class RedmineMCPServer {
   private server: McpServer;
-  private apiClient: AxiosInstance;
-  private baseUrl: string;
-  private apiKey: string;
+  private fetchRedmine: ReturnType<typeof createRedmineClient>;
 
   /**
    * Creates a new RedmineMCPServer instance
@@ -203,17 +201,10 @@ class RedmineMCPServer {
    * the HTTP client for making API requests.
    */
   constructor() {
-    // Get configuration from validated config
-    this.baseUrl = config.redmine.url;
-    this.apiKey = config.redmine.apiKey;
-
-    // Initialize API client
-    this.apiClient = axios.create({
-      baseURL: this.baseUrl,
-      headers: {
-        "X-Redmine-API-Key": this.apiKey,
-        "Content-Type": "application/json",
-      },
+    // Initialize Redmine API client
+    this.fetchRedmine = createRedmineClient({
+      baseUrl: config.redmine.url,
+      apiKey: config.redmine.apiKey,
       timeout: config.redmine.timeout,
     });
 
@@ -397,13 +388,13 @@ class RedmineMCPServer {
       // Sort by priority (descending) by default, then by updated date
       params["sort"] = "priority:desc,updated_on:desc";
 
-      const response = await this.apiClient.get("/issues.json", { params });
+      const data = await this.fetchRedmine("/issues.json", { params });
 
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(response.data, null, 2),
+            text: JSON.stringify(data, null, 2),
           },
         ],
       };
@@ -424,13 +415,13 @@ class RedmineMCPServer {
     args: GetIssueByIdArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
-      const response = await this.apiClient.get(`/issues/${args.issue_id}.json`);
+      const data = await this.fetchRedmine(`/issues/${args.issue_id}.json`);
 
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(response.data, null, 2),
+            text: JSON.stringify(data, null, 2),
           },
         ],
       };
@@ -456,9 +447,11 @@ class RedmineMCPServer {
       if (args.limit) params["limit"] = args.limit;
       if (args.name) params["name"] = args.name;
 
-      const response = await this.apiClient.get("/projects.json", { params });
+      const data = await this.fetchRedmine<{ projects: RedmineProject[] }>("/projects.json", {
+        params,
+      });
 
-      let projects = response.data.projects || [];
+      let projects = data.projects || [];
 
       // If name filter is provided and Redmine API doesn't support it, filter client-side
       if (args.name && projects.length > 0) {
@@ -516,15 +509,16 @@ class RedmineMCPServer {
       if (args.priority_id) issueData["priority_id"] = args.priority_id;
       if (args.assigned_to_id) issueData["assigned_to_id"] = args.assigned_to_id;
 
-      const response = await this.apiClient.post("/issues.json", {
-        issue: issueData,
+      const data = await this.fetchRedmine("/issues.json", {
+        method: "POST",
+        body: { issue: issueData },
       });
 
       return {
         content: [
           {
             type: "text" as const,
-            text: `Issue created successfully: ${JSON.stringify(response.data, null, 2)}`,
+            text: `Issue created successfully: ${JSON.stringify(data, null, 2)}`,
           },
         ],
       };
@@ -575,15 +569,16 @@ class RedmineMCPServer {
       if (args.estimated_hours) issueData["estimated_hours"] = args.estimated_hours;
       if (args.parent_issue_id) issueData["parent_issue_id"] = args.parent_issue_id;
 
-      const response = await this.apiClient.put(`/issues/${args.issue_id}.json`, {
-        issue: issueData,
+      const data = await this.fetchRedmine(`/issues/${args.issue_id}.json`, {
+        method: "PUT",
+        body: { issue: issueData },
       });
 
       return {
         content: [
           {
             type: "text" as const,
-            text: `Issue updated successfully: ${JSON.stringify(response.data, null, 2)}`,
+            text: `Issue updated successfully: ${JSON.stringify(data, null, 2)}`,
           },
         ],
       };
@@ -618,13 +613,13 @@ class RedmineMCPServer {
       if (args.to) params["to"] = args.to;
       if (args.limit) params["limit"] = args.limit;
 
-      const response = await this.apiClient.get("/time_entries.json", { params });
+      const data = await this.fetchRedmine("/time_entries.json", { params });
 
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(response.data, null, 2),
+            text: JSON.stringify(data, null, 2),
           },
         ],
       };
@@ -645,14 +640,12 @@ class RedmineMCPServer {
     args: GetTimeActivitiesArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
-      let response;
-
       if (args.project_id) {
         // Get project-specific activities
-        response = await this.apiClient.get(
-          `/projects/${args.project_id}.json?include=time_entry_activities`,
-        );
-        const activities = response.data.project.time_entry_activities || [];
+        const data = await this.fetchRedmine<{
+          project: { time_entry_activities: Array<{ id: number; name: string }> };
+        }>(`/projects/${args.project_id}.json?include=time_entry_activities`);
+        const activities = data.project.time_entry_activities || [];
 
         return {
           content: [
@@ -672,8 +665,10 @@ class RedmineMCPServer {
         };
       } else {
         // Get global activities
-        response = await this.apiClient.get("/enumerations/time_entry_activities.json");
-        const activities = response.data.time_entry_activities || [];
+        const data = await this.fetchRedmine<{
+          time_entry_activities: Array<{ id: number; name: string; active: boolean }>;
+        }>("/enumerations/time_entry_activities.json");
+        const activities = data.time_entry_activities || [];
 
         return {
           content: [
@@ -738,15 +733,16 @@ class RedmineMCPServer {
         throw new Error("Either issue_id or project_id must be provided");
       }
 
-      const response = await this.apiClient.post("/time_entries.json", {
-        time_entry: timeData,
+      const data = await this.fetchRedmine("/time_entries.json", {
+        method: "POST",
+        body: { time_entry: timeData },
       });
 
       return {
         content: [
           {
             type: "text" as const,
-            text: `Time logged successfully: ${JSON.stringify(response.data, null, 2)}`,
+            text: `Time logged successfully: ${JSON.stringify(data, null, 2)}`,
           },
         ],
       };
@@ -771,13 +767,13 @@ class RedmineMCPServer {
         params["include"] = args.include;
       }
 
-      const response = await this.apiClient.get("/users/current.json", { params });
+      const data = await this.fetchRedmine("/users/current.json", { params });
 
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(response.data, null, 2),
+            text: JSON.stringify(data, null, 2),
           },
         ],
       };
@@ -795,13 +791,13 @@ class RedmineMCPServer {
    */
   private async getProjectsResource() {
     try {
-      const response = await this.apiClient.get("/projects.json");
+      const data = await this.fetchRedmine("/projects.json");
       return {
         contents: [
           {
             uri: "redmine://projects",
             mimeType: "application/json",
-            text: JSON.stringify(response.data, null, 2),
+            text: JSON.stringify(data, null, 2),
           },
         ],
       };
@@ -817,7 +813,7 @@ class RedmineMCPServer {
    */
   private async getRecentIssuesResource() {
     try {
-      const response = await this.apiClient.get("/issues.json", {
+      const data = await this.fetchRedmine("/issues.json", {
         params: {
           sort: "updated_on:desc",
           limit: 10,
@@ -828,7 +824,7 @@ class RedmineMCPServer {
           {
             uri: "redmine://issues/recent",
             mimeType: "application/json",
-            text: JSON.stringify(response.data, null, 2),
+            text: JSON.stringify(data, null, 2),
           },
         ],
       };
@@ -844,7 +840,7 @@ class RedmineMCPServer {
    */
   private async getRecentTimeEntriesResource() {
     try {
-      const response = await this.apiClient.get("/time_entries.json", {
+      const data = await this.fetchRedmine("/time_entries.json", {
         params: {
           limit: 10,
         },
@@ -854,7 +850,7 @@ class RedmineMCPServer {
           {
             uri: "redmine://time_entries/recent",
             mimeType: "application/json",
-            text: JSON.stringify(response.data, null, 2),
+            text: JSON.stringify(data, null, 2),
           },
         ],
       };
