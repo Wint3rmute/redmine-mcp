@@ -4,19 +4,4 @@
  */
 
 // Redmine domain types
-export type {
-  RedmineUser,
-  RedmineStatus,
-  RedminePriority,
-  RedmineProject,
-  RedmineIssue,
-  RedmineActivity,
-  RedmineTimeEntry,
-  RedmineApiResponse,
-  RedmineIssuesResponse,
-  RedmineProjectsResponse,
-  RedmineTimeEntriesResponse,
-  RedmineUserResponse,
-  CreateIssueRequest,
-  CreateTimeEntryRequest,
-} from "./redmine.js";
+export type { RedmineProject } from "./redmine.js";
