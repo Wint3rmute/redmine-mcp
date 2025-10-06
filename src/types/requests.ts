@@ -22,14 +22,6 @@ export interface GetTimeActivitiesArgs {
 }
 
 /**
- * Arguments for getting projects from Redmine
- */
-export interface GetProjectsArgs extends BaseRequestArgs {
-  name?: string | undefined;
-  include?: string | undefined;
-}
-
-/**
  * Arguments for creating a new issue in Redmine
  */
 export interface CreateIssueArgs {
@@ -135,7 +127,6 @@ export interface PromptArgs {
  * Union type of all possible tool arguments
  */
 export type ToolArgs =
-  | GetProjectsArgs
   | CreateIssueArgs
   | GetTimeEntriesArgs
   | LogTimeArgs
@@ -145,16 +136,6 @@ export type ToolArgs =
 /**
  * Type guard functions for runtime type checking
  *
- * Validates arguments for getting projects
- *
- * @param args - Arguments to validate as GetProjectsArgs
- * @returns True if args match GetProjectsArgs interface
- */
-export function isGetProjectsArgs(args: unknown): args is GetProjectsArgs {
-  return typeof args === "object" && args !== null;
-}
-
-/**
  * Validates arguments for creating issues
  *
  * @param args - Arguments to validate as CreateIssueArgs

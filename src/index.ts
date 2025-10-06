@@ -6,7 +6,6 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import axios, { type AxiosInstance } from "axios";
 import { config } from "./config/index.js";
 import type {
-  GetProjectsArgs,
   CreateIssueArgs,
   UpdateIssueArgs,
   GetIssueByIdArgs,
@@ -33,6 +32,19 @@ const getIssuesSchemaShape = {
  * Type for get_issues tool arguments, derived from Zod schema
  */
 export type GetIssuesArgs = z.infer<z.ZodObject<typeof getIssuesSchemaShape>>;
+
+/**
+ * Zod schema shape for get_projects tool arguments
+ */
+const getProjectsSchemaShape = {
+  limit: z.number().optional(),
+  name: z.string().optional(),
+} as const;
+
+/**
+ * Type for get_projects tool arguments, derived from Zod schema
+ */
+export type GetProjectsArgs = z.infer<z.ZodObject<typeof getProjectsSchemaShape>>;
 
 /**
  * Redmine MCP Server - Provides Model Context Protocol interface for Redmine API
@@ -90,10 +102,7 @@ class RedmineMCPServer {
       {
         title: "Get Projects",
         description: "Get mapping of project names to their IDs from Redmine",
-        inputSchema: {
-          limit: z.number().optional(),
-          name: z.string().optional(),
-        },
+        inputSchema: getProjectsSchemaShape,
       },
       async (args: GetProjectsArgs) => await this.getProjects(args),
     );
