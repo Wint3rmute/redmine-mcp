@@ -10,7 +10,7 @@ import type { RedmineProject } from "./types/index.js";
 /**
  * Zod schema shape for get_issues tool arguments
  */
-const getIssuesSchemaShape = {
+export const getIssuesSchemaShape = {
   project_id: z.string().optional(),
   status_id: z.string().optional(),
   assigned_to_id: z.string().optional(),
@@ -28,7 +28,7 @@ export type GetIssuesArgs = z.infer<z.ZodObject<typeof getIssuesSchemaShape>>;
 /**
  * Zod schema shape for get_projects tool arguments
  */
-const getProjectsSchemaShape = {
+export const getProjectsSchemaShape = {
   limit: z.number().optional(),
   name: z.string().optional(),
 } as const;
@@ -41,7 +41,7 @@ export type GetProjectsArgs = z.infer<z.ZodObject<typeof getProjectsSchemaShape>
 /**
  * Zod schema shape for get_issue_by_id tool arguments
  */
-const getIssueByIdSchemaShape = {
+export const getIssueByIdSchemaShape = {
   issue_id: z.number(),
 } as const;
 
@@ -53,7 +53,7 @@ export type GetIssueByIdArgs = z.infer<z.ZodObject<typeof getIssueByIdSchemaShap
 /**
  * Zod schema shape for create_issue tool arguments
  */
-const createIssueSchemaShape = {
+export const createIssueSchemaShape = {
   project_id: z.string(),
   subject: z.string(),
   description: z.string().optional(),
@@ -85,7 +85,7 @@ export type CreateIssueArgs = z.infer<z.ZodObject<typeof createIssueSchemaShape>
 /**
  * Zod schema shape for update_issue tool arguments
  */
-const updateIssueSchemaShape = {
+export const updateIssueSchemaShape = {
   issue_id: z.number(),
   subject: z.string().optional(),
   description: z.string().optional(),
@@ -119,7 +119,7 @@ export type UpdateIssueArgs = z.infer<z.ZodObject<typeof updateIssueSchemaShape>
 /**
  * Zod schema shape for get_time_entries tool arguments
  */
-const getTimeEntriesSchemaShape = {
+export const getTimeEntriesSchemaShape = {
   project_id: z.string().optional(),
   issue_id: z.string().optional(),
   user_id: z.string().optional(),
@@ -138,7 +138,7 @@ export type GetTimeEntriesArgs = z.infer<z.ZodObject<typeof getTimeEntriesSchema
 /**
  * Zod schema shape for get_time_activities tool arguments
  */
-const getTimeActivitiesSchemaShape = {
+export const getTimeActivitiesSchemaShape = {
   project_id: z.number().optional(),
 } as const;
 
@@ -150,7 +150,7 @@ export type GetTimeActivitiesArgs = z.infer<z.ZodObject<typeof getTimeActivities
 /**
  * Zod schema shape for log_time tool arguments
  */
-const logTimeSchemaShape = {
+export const logTimeSchemaShape = {
   issue_id: z.number().optional(),
   project_id: z.number().optional(),
   hours: z.number(),
@@ -175,7 +175,7 @@ export type LogTimeArgs = z.infer<z.ZodObject<typeof logTimeSchemaShape>>;
 /**
  * Zod schema shape for get_current_user tool arguments
  */
-const getCurrentUserSchemaShape = {
+export const getCurrentUserSchemaShape = {
   include: z.string().optional(),
 } as const;
 
