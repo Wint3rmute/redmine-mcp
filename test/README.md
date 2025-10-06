@@ -33,7 +33,23 @@ test/
 
 ## Running Tests Locally
 
-### Quick Start
+### Automated Script (Recommended)
+
+The easiest way to run tests locally is using the provided script:
+
+```bash
+./test/run-local-tests.sh
+```
+
+This script will:
+
+1. Build the Redmine Docker image
+2. Start the container with pre-seeded database
+3. Wait for initialization
+4. Run the test suite
+5. Clean up automatically
+
+### Quick Start (Manual)
 
 1. **Build the Redmine Docker image:**
 
@@ -76,7 +92,8 @@ test/
 
 ### Complete Test Script
 
-Here's a complete script that runs all steps:
+The `run-local-tests.sh` script in this directory automates all the steps below.
+Here's what it does:
 
 ```bash
 #!/bin/bash
