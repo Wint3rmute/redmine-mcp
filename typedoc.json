@@ -11,6 +11,7 @@
   "excludeProtected": false,
   "excludeInternal": false,
   "hideGenerator": false,
+  "treatWarningsAsErrors": true,
   "navigation": {
     "includeCategories": true,
     "includeGroups": true
