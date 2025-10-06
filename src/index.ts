@@ -6,7 +6,6 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import axios, { type AxiosInstance } from "axios";
 import { config } from "./config/index.js";
 import type {
-  GetIssuesArgs,
   GetProjectsArgs,
   CreateIssueArgs,
   UpdateIssueArgs,
@@ -16,6 +15,24 @@ import type {
   LogTimeArgs,
   RedmineProject,
 } from "./types/index.js";
+
+/**
+ * Zod schema shape for get_issues tool arguments
+ */
+const getIssuesSchemaShape = {
+  project_id: z.string().optional(),
+  status_id: z.string().optional(),
+  assigned_to_id: z.string().optional(),
+  limit: z.number().optional(),
+  issue_id: z.string().optional(),
+  subject: z.string().optional(),
+  parent_id: z.string().optional(),
+} as const;
+
+/**
+ * Type for get_issues tool arguments, derived from Zod schema
+ */
+export type GetIssuesArgs = z.infer<z.ZodObject<typeof getIssuesSchemaShape>>;
 
 /**
  * Redmine MCP Server - Provides Model Context Protocol interface for Redmine API
@@ -63,15 +80,7 @@ class RedmineMCPServer {
       {
         title: "Get Issues",
         description: "Get issues from Redmine with optional filtering",
-        inputSchema: {
-          project_id: z.string().optional(),
-          status_id: z.string().optional(),
-          assigned_to_id: z.string().optional(),
-          limit: z.number().optional(),
-          issue_id: z.string().optional(),
-          subject: z.string().optional(),
-          parent_id: z.string().optional(),
-        },
+        inputSchema: getIssuesSchemaShape,
       },
       async (args: GetIssuesArgs) => await this.getIssues(args),
     );

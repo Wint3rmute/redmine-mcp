@@ -10,19 +10,6 @@ export interface BaseRequestArgs {
   limit?: number | undefined;
 }
 
-/**
- * Arguments for getting issues from Redmine
- */
-export interface GetIssuesArgs {
-  project_id?: string | undefined;
-  assigned_to_id?: string | undefined;
-  status_id?: string | undefined;
-  limit?: number | undefined;
-  issue_id?: string | undefined; // Single issue ID or comma-separated list
-  subject?: string | undefined; // Search in issue subject/title
-  parent_id?: string | undefined; // Parent issue ID for filtering child issues
-}
-
 export interface GetIssueByIdArgs {
   issue_id: number;
 }
@@ -148,7 +135,6 @@ export interface PromptArgs {
  * Union type of all possible tool arguments
  */
 export type ToolArgs =
-  | GetIssuesArgs
   | GetProjectsArgs
   | CreateIssueArgs
   | GetTimeEntriesArgs
@@ -159,14 +145,6 @@ export type ToolArgs =
 /**
  * Type guard functions for runtime type checking
  *
- * @param args - Arguments to validate as GetIssuesArgs
- * @returns True if args match GetIssuesArgs interface
- */
-export function isGetIssuesArgs(args: unknown): args is GetIssuesArgs {
-  return typeof args === "object" && args !== null;
-}
-
-/**
  * Validates arguments for getting projects
  *
  * @param args - Arguments to validate as GetProjectsArgs
