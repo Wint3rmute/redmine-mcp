@@ -10,10 +10,6 @@ export interface BaseRequestArgs {
   limit?: number | undefined;
 }
 
-export interface GetIssueByIdArgs {
-  issue_id: number;
-}
-
 /**
  * Arguments for getting time tracking activities
  */
@@ -208,18 +204,4 @@ export function isGetCurrentUserArgs(args: unknown): args is GetCurrentUserArgs 
  */
 export function isPromptArgs(args: unknown): args is PromptArgs {
   return typeof args === "object" && args !== null;
-}
-
-/**
- * Validates arguments for getting issue by ID
- *
- * @param args - Arguments to validate as GetIssueByIdArgs
- * @returns True if args match GetIssueByIdArgs interface
- */
-export function isGetIssueByIdArgs(args: unknown): args is GetIssueByIdArgs {
-  if (typeof args !== "object" || args === null) {
-    return false;
-  }
-  const typed = args as Record<string, unknown>;
-  return typeof typed["issue_id"] === "number" && typed["issue_id"] > 0;
 }

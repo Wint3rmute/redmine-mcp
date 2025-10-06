@@ -8,7 +8,6 @@ import { config } from "./config/index.js";
 import type {
   CreateIssueArgs,
   UpdateIssueArgs,
-  GetIssueByIdArgs,
   GetTimeEntriesArgs,
   GetTimeActivitiesArgs,
   LogTimeArgs,
@@ -45,6 +44,18 @@ const getProjectsSchemaShape = {
  * Type for get_projects tool arguments, derived from Zod schema
  */
 export type GetProjectsArgs = z.infer<z.ZodObject<typeof getProjectsSchemaShape>>;
+
+/**
+ * Zod schema shape for get_issue_by_id tool arguments
+ */
+const getIssueByIdSchemaShape = {
+  issue_id: z.number(),
+} as const;
+
+/**
+ * Type for get_issue_by_id tool arguments, derived from Zod schema
+ */
+export type GetIssueByIdArgs = z.infer<z.ZodObject<typeof getIssueByIdSchemaShape>>;
 
 /**
  * Redmine MCP Server - Provides Model Context Protocol interface for Redmine API
@@ -112,9 +123,7 @@ class RedmineMCPServer {
       {
         title: "Get Issue By ID",
         description: "Get a specific issue by its ID from Redmine",
-        inputSchema: {
-          issue_id: z.number(),
-        },
+        inputSchema: getIssueByIdSchemaShape,
       },
       async (args: GetIssueByIdArgs) => await this.getIssueById(args),
     );

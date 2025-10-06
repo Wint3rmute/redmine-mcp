@@ -40,7 +40,6 @@ export type {
   BaseRequestArgs,
   CreateIssueArgs,
   UpdateIssueArgs,
-  GetIssueByIdArgs,
   GetTimeEntriesArgs,
   GetTimeActivitiesArgs,
   LogTimeArgs,
@@ -55,5 +54,4 @@ export {
   isGetTimeEntriesArgs,
   isGetCurrentUserArgs,
   isPromptArgs,
-  isGetIssueByIdArgs,
 } from "./requests.js";
