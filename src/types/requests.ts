@@ -11,24 +11,6 @@ export interface BaseRequestArgs {
 }
 
 /**
- * Arguments for logging time in Redmine
- */
-export interface LogTimeArgs {
-  issue_id?: number | undefined;
-  project_id?: number | undefined;
-  hours: number;
-  comments?: string | undefined;
-  spent_on?: string | undefined;
-  activity_id: number;
-  custom_fields?:
-    | Array<{
-        id: number;
-        value: string | number | boolean;
-      }>
-    | undefined;
-}
-
-/**
  * Arguments for getting current user information
  */
 export interface GetCurrentUserArgs {
@@ -50,26 +32,11 @@ export interface PromptArgs {
 /**
  * Union type of all possible tool arguments
  */
-export type ToolArgs = LogTimeArgs | GetCurrentUserArgs | PromptArgs;
+export type ToolArgs = GetCurrentUserArgs | PromptArgs;
 
 /**
  * Type guard functions for runtime type checking
  *
- * Validates arguments for logging time entries
- *
- * @param args - Arguments to validate as LogTimeArgs
- * @returns True if args match LogTimeArgs interface
- */
-export function isLogTimeArgs(args: unknown): args is LogTimeArgs {
-  if (typeof args !== "object" || args === null) {
-    return false;
-  }
-
-  const typed = args as Record<string, unknown>;
-  return typeof typed["hours"] === "number" && typed["hours"] > 0;
-}
-
-/**
  * Validates arguments for getting current user
  *
  * @param args - Arguments to validate as GetCurrentUserArgs

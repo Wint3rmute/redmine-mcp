@@ -5,7 +5,7 @@ import { z } from "zod";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import axios, { type AxiosInstance } from "axios";
 import { config } from "./config/index.js";
-import type { LogTimeArgs, RedmineProject } from "./types/index.js";
+import type { RedmineProject } from "./types/index.js";
 
 /**
  * Zod schema shape for get_issues tool arguments
@@ -148,6 +148,31 @@ const getTimeActivitiesSchemaShape = {
 export type GetTimeActivitiesArgs = z.infer<z.ZodObject<typeof getTimeActivitiesSchemaShape>>;
 
 /**
+ * Zod schema shape for log_time tool arguments
+ */
+const logTimeSchemaShape = {
+  issue_id: z.number().optional(),
+  project_id: z.number().optional(),
+  hours: z.number(),
+  comments: z.string().optional(),
+  spent_on: z.string().optional(),
+  activity_id: z.number(),
+  custom_fields: z
+    .array(
+      z.object({
+        id: z.number(),
+        value: z.union([z.string(), z.number(), z.boolean()]),
+      }),
+    )
+    .optional(),
+} as const;
+
+/**
+ * Type for log_time tool arguments, derived from Zod schema
+ */
+export type LogTimeArgs = z.infer<z.ZodObject<typeof logTimeSchemaShape>>;
+
+/**
  * Redmine MCP Server - Provides Model Context Protocol interface for Redmine API
  *
  * This class implements an MCP server that exposes Redmine functionality through
@@ -264,14 +289,7 @@ class RedmineMCPServer {
       {
         title: "Log Time",
         description: "Log time spent on an issue or project.",
-        inputSchema: {
-          issue_id: z.number().optional(),
-          project_id: z.number().optional(),
-          hours: z.number(),
-          comments: z.string().optional(),
-          spent_on: z.string().optional(),
-          activity_id: z.number(),
-        },
+        inputSchema: logTimeSchemaShape,
       },
       async (args: LogTimeArgs) => await this.logTime(args),
     );
