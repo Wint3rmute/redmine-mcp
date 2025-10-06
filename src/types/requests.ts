@@ -11,13 +11,6 @@ export interface BaseRequestArgs {
 }
 
 /**
- * Arguments for getting time tracking activities
- */
-export interface GetTimeActivitiesArgs {
-  project_id?: number | undefined;
-}
-
-/**
  * Arguments for logging time in Redmine
  */
 export interface LogTimeArgs {

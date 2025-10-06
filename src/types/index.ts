@@ -38,7 +38,6 @@ export { createSuccessResponse, createErrorResponse } from "./mcp.js";
 // Request argument types
 export type {
   BaseRequestArgs,
-  GetTimeActivitiesArgs,
   LogTimeArgs,
   GetCurrentUserArgs,
   PromptArgs,
