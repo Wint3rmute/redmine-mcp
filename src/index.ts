@@ -5,17 +5,184 @@ import { z } from "zod";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import axios, { type AxiosInstance } from "axios";
 import { config } from "./config/index.js";
-import type {
-  GetIssuesArgs,
-  GetProjectsArgs,
-  CreateIssueArgs,
-  UpdateIssueArgs,
-  GetIssueByIdArgs,
-  GetTimeEntriesArgs,
-  GetTimeActivitiesArgs,
-  LogTimeArgs,
-  RedmineProject,
-} from "./types/index.js";
+import type { RedmineProject } from "./types/index.js";
+
+/**
+ * Zod schema shape for get_issues tool arguments
+ */
+const getIssuesSchemaShape = {
+  project_id: z.string().optional(),
+  status_id: z.string().optional(),
+  assigned_to_id: z.string().optional(),
+  limit: z.number().optional(),
+  issue_id: z.string().optional(),
+  subject: z.string().optional(),
+  parent_id: z.string().optional(),
+} as const;
+
+/**
+ * Type for get_issues tool arguments, derived from Zod schema
+ */
+export type GetIssuesArgs = z.infer<z.ZodObject<typeof getIssuesSchemaShape>>;
+
+/**
+ * Zod schema shape for get_projects tool arguments
+ */
+const getProjectsSchemaShape = {
+  limit: z.number().optional(),
+  name: z.string().optional(),
+} as const;
+
+/**
+ * Type for get_projects tool arguments, derived from Zod schema
+ */
+export type GetProjectsArgs = z.infer<z.ZodObject<typeof getProjectsSchemaShape>>;
+
+/**
+ * Zod schema shape for get_issue_by_id tool arguments
+ */
+const getIssueByIdSchemaShape = {
+  issue_id: z.number(),
+} as const;
+
+/**
+ * Type for get_issue_by_id tool arguments, derived from Zod schema
+ */
+export type GetIssueByIdArgs = z.infer<z.ZodObject<typeof getIssueByIdSchemaShape>>;
+
+/**
+ * Zod schema shape for create_issue tool arguments
+ */
+const createIssueSchemaShape = {
+  project_id: z.string(),
+  subject: z.string(),
+  description: z.string().optional(),
+  priority_id: z.number().optional(),
+  assigned_to_id: z.number().optional(),
+  tracker_id: z.number().optional(),
+  category_id: z.number().optional(),
+  fixed_version_id: z.number().optional(),
+  start_date: z.string().optional(),
+  due_date: z.string().optional(),
+  estimated_hours: z.number().optional(),
+  done_ratio: z.number().optional(),
+  parent_issue_id: z.number().optional(),
+  custom_fields: z
+    .array(
+      z.object({
+        id: z.number(),
+        value: z.union([z.string(), z.number(), z.boolean()]),
+      }),
+    )
+    .optional(),
+} as const;
+
+/**
+ * Type for create_issue tool arguments, derived from Zod schema
+ */
+export type CreateIssueArgs = z.infer<z.ZodObject<typeof createIssueSchemaShape>>;
+
+/**
+ * Zod schema shape for update_issue tool arguments
+ */
+const updateIssueSchemaShape = {
+  issue_id: z.number(),
+  subject: z.string().optional(),
+  description: z.string().optional(),
+  priority_id: z.number().optional(),
+  assigned_to_id: z.number().optional(),
+  tracker_id: z.number().optional(),
+  category_id: z.number().optional(),
+  fixed_version_id: z.number().optional(),
+  start_date: z.string().optional(),
+  due_date: z.string().optional(),
+  estimated_hours: z.number().optional(),
+  done_ratio: z.number().optional(),
+  parent_issue_id: z.number().optional(),
+  status_id: z.number().optional(),
+  notes: z.string().optional(),
+  custom_fields: z
+    .array(
+      z.object({
+        id: z.number(),
+        value: z.union([z.string(), z.number(), z.boolean()]),
+      }),
+    )
+    .optional(),
+} as const;
+
+/**
+ * Type for update_issue tool arguments, derived from Zod schema
+ */
+export type UpdateIssueArgs = z.infer<z.ZodObject<typeof updateIssueSchemaShape>>;
+
+/**
+ * Zod schema shape for get_time_entries tool arguments
+ */
+const getTimeEntriesSchemaShape = {
+  project_id: z.string().optional(),
+  issue_id: z.string().optional(),
+  user_id: z.string().optional(),
+  activity_id: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  spent_on: z.string().optional(),
+  limit: z.number().optional(),
+} as const;
+
+/**
+ * Type for get_time_entries tool arguments, derived from Zod schema
+ */
+export type GetTimeEntriesArgs = z.infer<z.ZodObject<typeof getTimeEntriesSchemaShape>>;
+
+/**
+ * Zod schema shape for get_time_activities tool arguments
+ */
+const getTimeActivitiesSchemaShape = {
+  project_id: z.number().optional(),
+} as const;
+
+/**
+ * Type for get_time_activities tool arguments, derived from Zod schema
+ */
+export type GetTimeActivitiesArgs = z.infer<z.ZodObject<typeof getTimeActivitiesSchemaShape>>;
+
+/**
+ * Zod schema shape for log_time tool arguments
+ */
+const logTimeSchemaShape = {
+  issue_id: z.number().optional(),
+  project_id: z.number().optional(),
+  hours: z.number(),
+  comments: z.string().optional(),
+  spent_on: z.string().optional(),
+  activity_id: z.number(),
+  custom_fields: z
+    .array(
+      z.object({
+        id: z.number(),
+        value: z.union([z.string(), z.number(), z.boolean()]),
+      }),
+    )
+    .optional(),
+} as const;
+
+/**
+ * Type for log_time tool arguments, derived from Zod schema
+ */
+export type LogTimeArgs = z.infer<z.ZodObject<typeof logTimeSchemaShape>>;
+
+/**
+ * Zod schema shape for get_current_user tool arguments
+ */
+const getCurrentUserSchemaShape = {
+  include: z.string().optional(),
+} as const;
+
+/**
+ * Type for get_current_user tool arguments, derived from Zod schema
+ */
+export type GetCurrentUserArgs = z.infer<z.ZodObject<typeof getCurrentUserSchemaShape>>;
 
 /**
  * Redmine MCP Server - Provides Model Context Protocol interface for Redmine API
@@ -63,15 +230,7 @@ class RedmineMCPServer {
       {
         title: "Get Issues",
         description: "Get issues from Redmine with optional filtering",
-        inputSchema: {
-          project_id: z.string().optional(),
-          status_id: z.string().optional(),
-          assigned_to_id: z.string().optional(),
-          limit: z.number().optional(),
-          issue_id: z.string().optional(),
-          subject: z.string().optional(),
-          parent_id: z.string().optional(),
-        },
+        inputSchema: getIssuesSchemaShape,
       },
       async (args: GetIssuesArgs) => await this.getIssues(args),
     );
@@ -81,10 +240,7 @@ class RedmineMCPServer {
       {
         title: "Get Projects",
         description: "Get mapping of project names to their IDs from Redmine",
-        inputSchema: {
-          limit: z.number().optional(),
-          name: z.string().optional(),
-        },
+        inputSchema: getProjectsSchemaShape,
       },
       async (args: GetProjectsArgs) => await this.getProjects(args),
     );
@@ -94,9 +250,7 @@ class RedmineMCPServer {
       {
         title: "Get Issue By ID",
         description: "Get a specific issue by its ID from Redmine",
-        inputSchema: {
-          issue_id: z.number(),
-        },
+        inputSchema: getIssueByIdSchemaShape,
       },
       async (args: GetIssueByIdArgs) => await this.getIssueById(args),
     );
@@ -106,13 +260,7 @@ class RedmineMCPServer {
       {
         title: "Create Issue",
         description: "Create a new issue in Redmine",
-        inputSchema: {
-          project_id: z.string(),
-          subject: z.string(),
-          description: z.string().optional(),
-          priority_id: z.number().optional(),
-          assigned_to_id: z.number().optional(),
-        },
+        inputSchema: createIssueSchemaShape,
       },
       async (args: CreateIssueArgs) => await this.createIssue(args),
     );
@@ -123,16 +271,7 @@ class RedmineMCPServer {
         title: "Update Issue",
         description:
           "Update an existing issue in Redmine. Description should be provided in Textile markup.",
-        inputSchema: {
-          issue_id: z.number(),
-          subject: z.string().optional(),
-          description: z.string().optional(),
-          priority_id: z.number().optional(),
-          assigned_to_id: z.number().optional(),
-          status_id: z.number().optional(),
-          done_ratio: z.number().optional(),
-          notes: z.string().optional(),
-        },
+        inputSchema: updateIssueSchemaShape,
       },
       async (args: UpdateIssueArgs) => await this.updateIssue(args),
     );
@@ -142,14 +281,7 @@ class RedmineMCPServer {
       {
         title: "Get Time Entries",
         description: "Get time entries from Redmine",
-        inputSchema: {
-          project_id: z.string().optional(),
-          issue_id: z.string().optional(),
-          user_id: z.string().optional(),
-          from: z.string().optional(),
-          to: z.string().optional(),
-          limit: z.number().optional(),
-        },
+        inputSchema: getTimeEntriesSchemaShape,
       },
       async (args: GetTimeEntriesArgs) => await this.getTimeEntries(args),
     );
@@ -159,9 +291,7 @@ class RedmineMCPServer {
       {
         title: "Get Time Activities",
         description: "Get available time tracking activities for a project or globally.",
-        inputSchema: {
-          project_id: z.number().optional(),
-        },
+        inputSchema: getTimeActivitiesSchemaShape,
       },
       async (args: GetTimeActivitiesArgs) => await this.getTimeActivities(args),
     );
@@ -171,14 +301,7 @@ class RedmineMCPServer {
       {
         title: "Log Time",
         description: "Log time spent on an issue or project.",
-        inputSchema: {
-          issue_id: z.number().optional(),
-          project_id: z.number().optional(),
-          hours: z.number(),
-          comments: z.string().optional(),
-          spent_on: z.string().optional(),
-          activity_id: z.number(),
-        },
+        inputSchema: logTimeSchemaShape,
       },
       async (args: LogTimeArgs) => await this.logTime(args),
     );
@@ -188,9 +311,9 @@ class RedmineMCPServer {
       {
         title: "Get Current User",
         description: "Get information about the current user (based on API token)",
-        inputSchema: {},
+        inputSchema: getCurrentUserSchemaShape,
       },
-      async () => await this.getCurrentUser(),
+      async (args: GetCurrentUserArgs) => await this.getCurrentUser(args),
     );
 
     this.setupHandlers();
@@ -636,11 +759,19 @@ class RedmineMCPServer {
   /**
    * Retrieves information about the current user based on API token
    *
+   * @param args - Arguments for getting current user (optional include parameter)
    * @returns Promise resolving to current user information
    */
-  private async getCurrentUser(): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  private async getCurrentUser(
+    args: GetCurrentUserArgs,
+  ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
-      const response = await this.apiClient.get("/users/current.json");
+      const params: Record<string, string> = {};
+      if (args.include) {
+        params["include"] = args.include;
+      }
+
+      const response = await this.apiClient.get("/users/current.json", { params });
 
       return {
         content: [

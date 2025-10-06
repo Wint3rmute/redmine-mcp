@@ -35,29 +35,5 @@ export type {
 
 export { createSuccessResponse, createErrorResponse } from "./mcp.js";
 
-// Request argument types
-export type {
-  BaseRequestArgs,
-  GetIssuesArgs,
-  GetProjectsArgs,
-  CreateIssueArgs,
-  UpdateIssueArgs,
-  GetIssueByIdArgs,
-  GetTimeEntriesArgs,
-  GetTimeActivitiesArgs,
-  LogTimeArgs,
-  GetCurrentUserArgs,
-  PromptArgs,
-  ToolArgs,
-} from "./requests.js";
-
-export {
-  isGetIssuesArgs,
-  isGetProjectsArgs,
-  isCreateIssueArgs,
-  isLogTimeArgs,
-  isGetTimeEntriesArgs,
-  isGetCurrentUserArgs,
-  isPromptArgs,
-  isGetIssueByIdArgs,
-} from "./requests.js";
+// Note: Request argument types are now defined and exported directly from src/index.ts
+// as they are derived from Zod schemas for compile-time type safety.
