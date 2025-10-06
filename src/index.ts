@@ -5,6 +5,7 @@ import { z } from "zod";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { config } from "./config/index.js";
 import type { RedmineProject } from "./types/index.js";
+import { createRedmineClient } from "./utils/index.js";
 
 /**
  * Zod schema shape for get_issues tool arguments
@@ -191,9 +192,7 @@ export type GetCurrentUserArgs = z.infer<z.ZodObject<typeof getCurrentUserSchema
  */
 class RedmineMCPServer {
   private server: McpServer;
-  private baseUrl: string;
-  private apiKey: string;
-  private timeout: number;
+  private fetchRedmine: ReturnType<typeof createRedmineClient>;
 
   /**
    * Creates a new RedmineMCPServer instance
@@ -202,10 +201,12 @@ class RedmineMCPServer {
    * the HTTP client for making API requests.
    */
   constructor() {
-    // Get configuration from validated config
-    this.baseUrl = config.redmine.url;
-    this.apiKey = config.redmine.apiKey;
-    this.timeout = config.redmine.timeout;
+    // Initialize Redmine API client
+    this.fetchRedmine = createRedmineClient({
+      baseUrl: config.redmine.url,
+      apiKey: config.redmine.apiKey,
+      timeout: config.redmine.timeout,
+    });
 
     // Initialize MCP server
     this.server = new McpServer({
@@ -354,81 +355,6 @@ class RedmineMCPServer {
     );
 
     // TODO: Register prompts using modular API if supported (see next step)
-  }
-
-  /**
-   * Makes an HTTP request to the Redmine API using native fetch
-   *
-   * @param path - API endpoint path (e.g., "/issues.json")
-   * @param options - Fetch options including method, body, etc.
-   * @param options.method - HTTP method (GET, POST, PUT, DELETE)
-   * @param options.params - Query parameters to append to URL
-   * @param options.body - Request body to send (will be JSON stringified)
-   * @returns Promise resolving to the parsed JSON response
-   * @throws {Error} When the request fails or returns non-OK status
-   */
-  private async fetchRedmine<T = unknown>(
-    path: string,
-    options: {
-      method?: string;
-      params?: Record<string, string | number>;
-      body?: unknown;
-    } = {},
-  ): Promise<T> {
-    const { method = "GET", params, body } = options;
-
-    // Build URL with query parameters
-    const url = new URL(path, this.baseUrl);
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        url.searchParams.append(key, String(value));
-      });
-    }
-
-    // Set up timeout using AbortController
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-    try {
-      // Build fetch options, only including body if it's defined
-      const fetchOptions: RequestInit = {
-        method,
-        headers: {
-          "X-Redmine-API-Key": this.apiKey,
-          "Content-Type": "application/json",
-        },
-        signal: controller.signal,
-      };
-
-      // Only add body if it exists to satisfy exactOptionalPropertyTypes
-      if (body !== undefined) {
-        fetchOptions.body = JSON.stringify(body);
-      }
-
-      const response = await fetch(url.toString(), fetchOptions);
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => response.statusText);
-        throw new Error(`Redmine API error: ${response.status} ${errorText}`);
-      }
-
-      // Check if response has content before parsing JSON
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        return (await response.json()) as T;
-      }
-
-      // Return empty object for successful responses without content (e.g., 204 No Content)
-      return {} as T;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new Error(`Request timeout after ${this.timeout}ms`);
-      }
-      throw error;
-    }
   }
 
   // Tool implementations
