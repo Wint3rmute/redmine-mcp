@@ -114,3 +114,22 @@ npm run format
 ```bash
 npx @modelcontextprotocol/inspector node build/index.js
 ```
+
+### E2E Testing
+
+The project includes automated end-to-end tests that run against a Dockerized
+Redmine instance:
+
+```bash
+npm test
+```
+
+For detailed instructions on running e2e tests locally, see
+[test/README.md](test/README.md).
+
+The e2e tests:
+
+- Use Node.js built-in test runner (`node:test`)
+- Run Redmine in Docker with SQLite (no external database needed)
+- Pre-seed the database with a test user and API token
+- Verify API token authentication and basic API functionality

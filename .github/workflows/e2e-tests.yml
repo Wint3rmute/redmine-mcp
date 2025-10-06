@@ -1,0 +1,92 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  e2e-tests:
+    name: E2E Tests with Dockerized Redmine
+    runs-on: ubuntu-latest
+
+    env:
+      REDMINE_URL: http://localhost:3000
+      REDMINE_API_KEY: test_api_token_12345678901234567890
+      REDMINE_TEST_API_TOKEN: test_api_token_12345678901234567890
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Redmine Docker image
+        run: |
+          cd test/fixtures
+          docker build -t redmine-test:latest .
+
+      - name: Start Redmine container
+        run: |
+          docker run -d \
+            --name redmine-test \
+            -p 3000:3000 \
+            -e REDMINE_TEST_API_TOKEN=${{ env.REDMINE_TEST_API_TOKEN }} \
+            redmine-test:latest
+
+          echo "Redmine container started"
+          docker ps
+
+      - name: Wait for Redmine to be ready
+        run: |
+          echo "Waiting for Redmine to initialize..."
+          timeout=120
+          elapsed=0
+          interval=5
+
+          while [ $elapsed -lt $timeout ]; do
+            if docker logs redmine-test 2>&1 | grep -q "Database seeding completed"; then
+              echo "Redmine is ready!"
+              break
+            fi
+            
+            echo "Waiting... ($elapsed/$timeout seconds)"
+            sleep $interval
+            elapsed=$((elapsed + interval))
+          done
+
+          if [ $elapsed -ge $timeout ]; then
+            echo "Timeout waiting for Redmine"
+            echo "=== Docker logs ==="
+            docker logs redmine-test
+            exit 1
+          fi
+
+          # Give it a few more seconds to fully start
+          sleep 10
+
+          echo "=== Docker logs ==="
+          docker logs redmine-test
+
+      - name: Run E2E tests
+        run: npm test
+
+      - name: Show Redmine logs on failure
+        if: failure()
+        run: |
+          echo "=== Redmine Docker logs ==="
+          docker logs redmine-test
+
+      - name: Stop Redmine container
+        if: always()
+        run: |
+          docker stop redmine-test || true
+          docker rm redmine-test || true

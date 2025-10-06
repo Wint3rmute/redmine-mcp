@@ -13,3 +13,10 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 .vscode/mcp.json
+
+# Test artifacts
+test/**/*.db
+test/**/*.sqlite
+test/**/*.sqlite3
+test/**/tmp/
+test/**/coverage/
