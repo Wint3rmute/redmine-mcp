@@ -9,23 +9,21 @@ logging.
 
 ### Tools
 
-- `get_issues` - Retrieve issues with optional filtering by project, status,
-  assignee
+- `get_issues` - Retrieve issues with optional filtering
+- `get_issue_by_id` - Get a specific issue by its ID
 - `get_projects` - List available Redmine projects
 - `create_issue` - Create new issues in Redmine projects
+- `update_issue` - Update existing issues in Redmine
 - `get_time_entries` - Retrieve time entries with filtering options
+- `get_time_activities` - Get available time tracking activities for a project or globally
 - `log_time` - Log time spent on issues or projects
+- `get_current_user` - Get information about the current user (based on API token)
 
 ### Resources
 
 - **redmine://projects** - List of all accessible projects
 - **redmine://issues/recent** - Recently updated issues
 - **redmine://time_entries/recent** - Recently logged time entries
-
-### Prompts
-
-- **issue_summary** - Generate comprehensive project issue summaries
-- **time_report** - Create detailed time tracking reports
 
 ## Setup
 
@@ -34,15 +32,6 @@ logging.
 - Node.js 22+
 - Access to a Redmine instance with API key
 - Redmine REST API enabled
-
-### Environment Variables
-
-Set the following environment variables:
-
-```bash
-export REDMINE_URL="https://your-redmine-instance.com"
-export REDMINE_API_KEY="your_api_key_here"
-```
 
 ### Installation
 
