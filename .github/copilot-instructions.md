@@ -87,7 +87,7 @@ npm run format        # Prettier format
 ### Testing
 
 ```bash
-npx @modelcontextprotocol/inspector node build/index.js
+npx @modelcontextprotocol/inspector node build/src/index.js
 ```
 
 ## Common Tasks

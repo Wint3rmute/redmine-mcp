@@ -7,6 +7,9 @@ import { config } from "./config/index.js";
 import type { RedmineProject } from "./types/index.js";
 import { createRedmineClient } from "./utils/index.js";
 
+// Re-export utility types for documentation
+export type { RedmineClientConfig, RedmineFetchOptions } from "./utils/index.js";
+
 /**
  * Zod schema shape for get_issues tool arguments
  */
@@ -190,7 +193,7 @@ export type GetCurrentUserArgs = z.infer<z.ZodObject<typeof getCurrentUserSchema
  * This class implements an MCP server that exposes Redmine functionality through
  * standardized tools, resources, and prompts for AI assistants and other clients.
  */
-class RedmineMCPServer {
+export class RedmineMCPServer {
   private server: McpServer;
   private fetchRedmine: ReturnType<typeof createRedmineClient>;
 

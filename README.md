@@ -69,7 +69,7 @@ contents:
     "redmine-mcp-server": {
       "type": "stdio",
       "command": "node",
-      "args": ["build/index.js"],
+      "args": ["build/src/index.js"],
       "env": {
         "REDMINE_URL": "your URL here",
         "REDMINE_API_KEY": "your API key here"
@@ -112,5 +112,5 @@ npm run format
 ### Testing with MCP Inspector
 
 ```bash
-npx @modelcontextprotocol/inspector node build/index.js
+npx @modelcontextprotocol/inspector node build/src/index.js
 ```
