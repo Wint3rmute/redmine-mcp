@@ -109,6 +109,46 @@ npm run lint
 npm run format
 ```
 
+### Testing
+
+This project uses [Vitest](https://vitest.dev/) as its testing framework,
+providing fast test execution, watch mode, and comprehensive coverage reports.
+
+#### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests once and exit
+npm run test:run
+
+# Run only e2e tests
+npm run test:e2e
+
+# Run tests with UI
+npm run test:ui
+```
+
+#### Test Structure
+
+- `test/unit/` - Unit tests for individual functions and modules
+- `test/e2e/` - End-to-end tests using Docker and Playwright
+
+#### Writing Tests
+
+Tests use Vitest's `describe`, `it`, and `expect` API:
+
+```typescript
+import { describe, it, expect } from "vitest";
+
+describe("My Feature", () => {
+  it("should work correctly", () => {
+    expect(1 + 1).toBe(2);
+  });
+});
+```
+
 ### Testing with MCP Inspector
 
 ```bash
