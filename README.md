@@ -132,7 +132,6 @@ npm run test:ui
 
 #### Test Structure
 
-- `test/unit/` - Unit tests for individual functions and modules
 - `test/e2e/` - End-to-end tests using Docker and Playwright
 
 #### Writing Tests
