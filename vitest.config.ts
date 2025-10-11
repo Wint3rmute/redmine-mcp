@@ -6,5 +6,12 @@ export default defineConfig({
     environment: "node",
     testTimeout: 120000, // 2 minutes for e2e tests with Docker
     hookTimeout: 60000, // 1 minute for setup/teardown
+    exclude: [
+      "**/node_modules/**",
+      "**/build/**",
+      "**/dist/**",
+      "**/.{idea,git,cache,output,temp}/**",
+      "**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*",
+    ],
   },
 });
