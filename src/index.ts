@@ -190,7 +190,7 @@ export type GetCurrentUserArgs = z.infer<z.ZodObject<typeof getCurrentUserSchema
  * This class implements an MCP server that exposes Redmine functionality through
  * standardized tools, resources, and prompts for AI assistants and other clients.
  */
-class RedmineMCPServer {
+export class RedmineMCPServer {
   private server: McpServer;
   private fetchRedmine: ReturnType<typeof createRedmineClient>;
 

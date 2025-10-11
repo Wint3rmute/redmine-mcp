@@ -28,5 +28,8 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run end-to-end tests
+      - name: Run container lifecycle tests
         run: npm run test:e2e
+
+      - name: Run MCP server integration tests
+        run: npm run test:e2e:mcp
