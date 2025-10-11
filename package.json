@@ -2,11 +2,11 @@
   "name": "redmine-mcp-server",
   "version": "0.1.0",
   "description": "Model Context Protocol server for Redmine integration - project management, issue tracking, and time tracking",
-  "main": "build/index.js",
+  "main": "build/src/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node build/index.js",
+    "start": "node build/src/index.js",
     "dev": "tsc --watch",
     "prepare": "npm run build",
     "lint": "eslint src --ext .ts",
@@ -16,8 +16,7 @@
     "format:check": "prettier --check .",
     "format:src": "prettier --write src/**/*.ts",
     "docs": "typedoc",
-    "test:e2e": "tsc && node --test build/test/e2e/redmine.test.js",
-    "test:e2e:mcp": "tsc && node build/test/e2e/mcp-server.test.js"
+    "test:e2e": "tsc && node build/test/e2e/mcp-server.test.js"
   },
   "keywords": [
     "mcp",
@@ -51,7 +50,7 @@
     "typescript-eslint": "^8.45.0"
   },
   "bin": {
-    "redmine-mcp-server": "./build/index.js"
+    "redmine-mcp-server": "./build/src/index.js"
   },
   "files": [
     "build/**/*",

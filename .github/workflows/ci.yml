@@ -56,7 +56,7 @@ jobs:
             echo "Build directory not found!"
             exit 1
           fi
-          if [ ! -f "build/index.js" ]; then
+          if [ ! -f "build/src/index.js" ]; then
             echo "Main build file not found!"
             exit 1
           fi

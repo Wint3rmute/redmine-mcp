@@ -7,6 +7,9 @@ import { config } from "./config/index.js";
 import type { RedmineProject } from "./types/index.js";
 import { createRedmineClient } from "./utils/index.js";
 
+// Re-export utility types for documentation
+export type { RedmineClientConfig, RedmineFetchOptions } from "./utils/index.js";
+
 /**
  * Zod schema shape for get_issues tool arguments
  */
