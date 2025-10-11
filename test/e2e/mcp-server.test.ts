@@ -8,6 +8,12 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
  * Tests the MCP server against a real Redmine instance running in Docker
  */
 
+/**
+ * Execute a shell command and return stdout/stderr
+ *
+ * @param cmd - The command to execute
+ * @returns Promise resolving to stdout and stderr
+ */
 function run(cmd: string): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     exec(cmd, (error, stdout, stderr) => {
@@ -20,6 +26,13 @@ function run(cmd: string): Promise<{ stdout: string; stderr: string }> {
   });
 }
 
+/**
+ * Wait for Redmine server to be ready
+ *
+ * @param url - The URL to check for readiness
+ * @param timeoutMs - Maximum time to wait in milliseconds
+ * @returns Promise that resolves when Redmine is ready
+ */
 async function waitForRedmine(url: string, timeoutMs = 60000): Promise<void> {
   const startTime = Date.now();
   console.log(`Waiting for Redmine to be ready at ${url}...`);
@@ -31,7 +44,7 @@ async function waitForRedmine(url: string, timeoutMs = 60000): Promise<void> {
         console.log("Redmine is ready!");
         return;
       }
-    } catch (error) {
+    } catch {
       // Connection failed, retry
     }
     await new Promise(r => setTimeout(r, 1000));
@@ -40,6 +53,11 @@ async function waitForRedmine(url: string, timeoutMs = 60000): Promise<void> {
   throw new Error(`Redmine did not become ready within ${timeoutMs}ms`);
 }
 
+/**
+ * Start a Redmine container using Docker
+ *
+ * @returns Promise resolving to the container name
+ */
 async function startRedmineContainer() {
   const containerName = "redmine-e2e-test";
   const image = "redmine:latest";
@@ -52,12 +70,24 @@ async function startRedmineContainer() {
   return containerName;
 }
 
+/**
+ * Stop a Redmine container
+ *
+ * @param containerName - The name of the container to stop
+ * @returns Promise that resolves when the container is stopped
+ */
 async function stopRedmineContainer(containerName: string) {
   console.log("Stopping Redmine container...");
   await run(`docker stop ${containerName}`);
   console.log("Redmine container stopped.");
 }
 
+/**
+ * Login to Redmine and retrieve API key using Playwright
+ *
+ * @param baseUrl - The base URL of the Redmine instance
+ * @returns Promise resolving to the API key
+ */
 async function loginAndGetApiKey(baseUrl: string): Promise<string> {
   console.log("Logging in as admin using Playwright...");
 
