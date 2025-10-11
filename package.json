@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@playwright/test": "^1.56.0",
     "@types/node": "^20.0.0",
     "better-docs": "^2.7.3",
     "eslint": "^9.36.0",
