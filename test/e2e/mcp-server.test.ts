@@ -1,6 +1,6 @@
 // Import necessary modules
 import { exec } from "child_process";
-import { chromium } from "playwright";
+import { chromium, type Browser, type Page } from "playwright";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 /**
@@ -88,51 +88,92 @@ async function stopRedmineContainer(containerName: string) {
 /**
  * Login to Redmine and retrieve API key using Playwright
  *
+ * @param page - The Playwright page instance
  * @param baseUrl - The base URL of the Redmine instance
  * @returns Promise resolving to the API key
  */
-async function loginAndGetApiKey(baseUrl: string): Promise<string> {
+async function loginAndGetApiKey(page: Page, baseUrl: string): Promise<string> {
   console.log("Logging in as admin using Playwright...");
 
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
+  // Navigate to login page
+  console.log("Navigating to Redmine login page...");
+  await page.goto(`${baseUrl}/`);
+  await page.getByRole("link", { name: "Sign in" }).click();
+  await page.getByRole("textbox", { name: "Login" }).click();
+  await page.getByRole("textbox", { name: "Login" }).fill("admin");
+  await page.getByRole("textbox", { name: "Password Lost password" }).click();
+  await page.getByRole("textbox", { name: "Password Lost password" }).fill("admin");
+  console.log("Logging in with default admin credentials...");
+  await page.getByRole("button", { name: "Login" }).click();
 
-  try {
-    // Navigate to login page
-    console.log("Navigating to Redmine login page...");
-    await page.goto(`${baseUrl}/`);
-    await page.getByRole("link", { name: "Sign in" }).click();
-    await page.getByRole("textbox", { name: "Login" }).click();
-    await page.getByRole("textbox", { name: "Login" }).fill("admin");
-    await page.getByRole("textbox", { name: "Password Lost password" }).click();
-    await page.getByRole("textbox", { name: "Password Lost password" }).fill("admin");
-    console.log("Logging in with default admin credentials...");
-    await page.getByRole("button", { name: "Login" }).click();
+  console.log("Changing admin password...");
+  await page.getByRole("textbox", { name: "Current password *" }).click();
+  await page.getByRole("textbox", { name: "Current password *" }).fill("admin");
+  await page.getByRole("textbox", { name: "New password *" }).click();
+  await page.getByRole("textbox", { name: "New password *" }).fill("admin1234");
+  await page.getByRole("textbox", { name: "Confirmation *" }).click();
+  await page.getByRole("textbox", { name: "Confirmation *" }).fill("admin1234");
+  await page.getByRole("button", { name: "Apply" }).click();
 
-    console.log("Changing admin password...");
-    await page.getByRole("textbox", { name: "Current password *" }).click();
-    await page.getByRole("textbox", { name: "Current password *" }).fill("admin");
-    await page.getByRole("textbox", { name: "New password *" }).click();
-    await page.getByRole("textbox", { name: "New password *" }).fill("admin1234");
-    await page.getByRole("textbox", { name: "Confirmation *" }).click();
-    await page.getByRole("textbox", { name: "Confirmation *" }).fill("admin1234");
-    await page.getByRole("button", { name: "Apply" }).click();
+  console.log("Enabling REST API access...");
+  await page.getByRole("link", { name: "Administration" }).click();
+  await page.getByRole("link", { name: "Settings" }).click();
+  await page.getByRole("link", { name: "API" }).click();
+  await page.getByRole("checkbox", { name: "Enable REST web service" }).check();
+  await page.getByRole("button", { name: "Save" }).click();
 
-    console.log("Enabling REST API access...");
-    await page.getByRole("link", { name: "Administration" }).click();
-    await page.getByRole("link", { name: "Settings" }).click();
-    await page.getByRole("link", { name: "API" }).click();
-    await page.getByRole("checkbox", { name: "Enable REST web service" }).check();
-    await page.getByRole("button", { name: "Save" }).click();
+  console.log("Retrieving API key...");
+  await page.goto(`${baseUrl}/my/api_key`);
+  const apiKey = await page.locator("#content > div.box > pre").innerText();
+  console.log("Extracted API key:", apiKey);
 
-    console.log("Retrieving API key...");
-    await page.goto(`${baseUrl}/my/api_key`);
-    const apiKey = await page.locator("#content > div.box > pre").innerText();
-    console.log("Extracted API key:", apiKey);
-    return apiKey;
-  } finally {
-    await browser.close();
-  }
+  await createRoleAndProject(page);
+  return apiKey;
+}
+
+/**
+ * Create a test role and project in Redmine using Playwright
+ *
+ * @param page - The Playwright page instance
+ * @returns Promise that resolves when role and project are created
+ */
+async function createRoleAndProject(page: Page): Promise<void> {
+  console.log("Creating a role...");
+  await page.goto("http://localhost:3000/roles/new");
+  await page.getByRole("textbox", { name: "Name *" }).click();
+  await page.getByRole("textbox", { name: "Name *" }).fill("test");
+  await page.getByRole("checkbox", { name: "Edit project" }).check();
+  await page.getByRole("checkbox", { name: "Add issues" }).check();
+  await page.getByRole("checkbox", { name: "Edit own issues" }).check();
+  await page.getByRole("checkbox", { name: "Copy issues" }).check();
+  await page.getByRole("checkbox", { name: "Edit issues" }).check();
+  await page.getByRole("checkbox", { name: "Add notes" }).check();
+  await page.getByRole("checkbox", { name: "Manage subtasks" }).check();
+  await page.getByRole("checkbox", { name: "Edit time logs" }).check();
+  await page.getByRole("checkbox", { name: "Log spent time", exact: true }).check();
+  await page.getByRole("checkbox", { name: "Edit own time logs" }).check();
+  await page.getByRole("checkbox", { name: "View spent time" }).check();
+  await page.getByRole("checkbox", { name: "Manage project activities" }).check();
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("link", { name: "test" }).click();
+
+  console.log("Creating a project...");
+  await page.locator("#top-menu").getByRole("link", { name: "Projects" }).click();
+  await page.getByRole("link", { name: "New project" }).click();
+  await page.getByRole("textbox", { name: "Name *" }).fill("E2E");
+  await page.getByRole("textbox", { name: "Identifier *" }).fill("e2e");
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+
+  // await page.getByRole("link", { name: "Projects" }).click();
+  await page.goto("http://localhost:3000/projects");
+
+  await page.getByRole("link", { name: "E2E" }).click();
+  await page.getByRole("link", { name: "Settings" }).click();
+  await page.getByRole("link", { name: "Members" }).click();
+  await page.getByRole("link", { name: "New member" }).click();
+  await page.getByRole("checkbox", { name: "RA Redmine Admin" }).check();
+  await page.getByRole("checkbox", { name: "test" }).check();
+  await page.getByRole("button", { name: "Add" }).click();
 }
 
 /**
@@ -141,17 +182,41 @@ async function loginAndGetApiKey(baseUrl: string): Promise<string> {
 describe("Redmine MCP Server E2E", () => {
   let containerName = "";
   let apiKey = "";
+  let browser: Browser;
+  let page: Page;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mcpServer: any; // RedmineMCPServer - imported dynamically
   const baseUrl = "http://localhost:3000";
 
   beforeAll(async () => {
-    // Setup: Start Redmine and get API key
+    // Setup: Start Redmine container
     containerName = await startRedmineContainer();
-    apiKey = await loginAndGetApiKey(baseUrl);
+
+    // Setup: Launch Playwright browser
+    console.log("Launching Playwright browser...");
+    browser = await chromium.launch({ headless: true });
+    page = await browser.newPage();
+
+    // Setup: Login and get API key
+    apiKey = await loginAndGetApiKey(page, baseUrl);
+
+    // Setup: Set environment variables for MCP server
     process.env["REDMINE_URL"] = baseUrl;
     process.env["REDMINE_API_KEY"] = apiKey;
+
+    // Setup: Create MCP server instance
+    const { RedmineMCPServer } = await import("../../src/index.js");
+    mcpServer = new RedmineMCPServer();
+    console.log("MCP server instance created.");
   }, 120000); // 2 minute timeout for container startup
 
   afterAll(async () => {
+    // Cleanup: Close browser
+    if (browser) {
+      console.log("Closing Playwright browser...");
+      await browser.close();
+    }
+
     // Cleanup: Stop Redmine container
     if (containerName) {
       await stopRedmineContainer(containerName);
@@ -159,18 +224,12 @@ describe("Redmine MCP Server E2E", () => {
   });
 
   it("should create MCP server instance successfully", async () => {
-    const { RedmineMCPServer } = await import("../../src/index.js");
-    const server = new RedmineMCPServer();
-
-    expect(server).toBeDefined();
+    expect(mcpServer).toBeDefined();
   });
 
   it("should get current user via MCP server method", async () => {
-    const { RedmineMCPServer } = await import("../../src/index.js");
-    const server = new RedmineMCPServer();
-
     // Call the getCurrentUser method directly
-    const response = await server.getCurrentUser({});
+    const response = await mcpServer.getCurrentUser({});
 
     // Verify MCP response structure
     expect(response).toHaveProperty("content");

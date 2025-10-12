@@ -5,14 +5,24 @@ import jsdoc from "eslint-plugin-jsdoc";
 import { defineConfig } from "eslint/config";
 
 export default defineConfig([
+  // Global ignores - applies to all configurations
   {
-    files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
+    ignores: ["build/**", "dist/**", "docs/**", "node_modules/**", "*.config.js", "coverage/**"],
+  },
+  // Configuration for source files
+  {
+    files: ["src/**/*.{ts,mts,cts}"],
     plugins: {
       js,
       jsdoc,
     },
     extends: ["js/recommended"],
-    languageOptions: { globals: globals.browser },
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.es2022,
+      },
+    },
     rules: {
       // JSDoc rules for documentation requirements
       "jsdoc/require-jsdoc": [
@@ -49,6 +59,47 @@ export default defineConfig([
       "jsdoc/check-param-names": "error",
       "jsdoc/check-types": "error",
       "jsdoc/valid-types": "error",
+    },
+  },
+  // Configuration for test files - more relaxed rules
+  {
+    files: ["test/**/*.{ts,mts,cts}"],
+    plugins: {
+      js,
+      jsdoc,
+    },
+    extends: ["js/recommended"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.es2022,
+      },
+    },
+    rules: {
+      // Require JSDoc for test helper functions
+      "jsdoc/require-jsdoc": [
+        "error",
+        {
+          require: {
+            FunctionDeclaration: true,
+            MethodDefinition: false, // No JSDoc required for test methods
+            ClassDeclaration: true,
+            ArrowFunctionExpression: false,
+            FunctionExpression: false, // No JSDoc required for inline test functions
+          },
+        },
+      ],
+      "jsdoc/require-description": "error",
+      "jsdoc/require-param-description": "error",
+      "jsdoc/require-returns-description": "error",
+      "jsdoc/require-param": "error",
+      "jsdoc/require-returns": [
+        "error",
+        {
+          forceRequireReturn: false,
+          forceReturnsWithAsync: false,
+        },
+      ],
     },
   },
   tseslint.configs.recommended,
