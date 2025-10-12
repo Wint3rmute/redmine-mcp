@@ -1,0 +1,33 @@
+import { test, expect } from "@playwright/test";
+
+test("test", async ({ page }) => {
+  await page.goto("http://localhost:3000/roles/new");
+  await page.getByRole("textbox", { name: "Name *" }).click();
+  await page.getByRole("textbox", { name: "Name *" }).fill("test");
+  await page.getByRole("checkbox", { name: "Edit project" }).check();
+  await page.getByRole("checkbox", { name: "Add issues" }).check();
+  await page.getByRole("checkbox", { name: "Edit own issues" }).check();
+  await page.getByRole("checkbox", { name: "Copy issues" }).check();
+  await page.getByRole("checkbox", { name: "Edit issues" }).check();
+  await page.getByRole("checkbox", { name: "Add notes" }).check();
+  await page.getByRole("checkbox", { name: "Manage subtasks" }).check();
+  await page.getByRole("checkbox", { name: "Edit time logs" }).check();
+  await page.getByRole("checkbox", { name: "Log spent time", exact: true }).check();
+  await page.getByRole("checkbox", { name: "Edit own time logs" }).check();
+  await page.getByRole("checkbox", { name: "View spent time" }).check();
+  await page.getByRole("checkbox", { name: "Manage project activities" }).check();
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("link", { name: "test" }).click();
+  await page.locator("#top-menu").getByRole("link", { name: "Projects" }).click();
+  await page.getByRole("link", { name: "New project" }).click();
+  await page.getByRole("textbox", { name: "Name *" }).fill("E2E");
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByRole("link", { name: "Projects" }).click();
+  await page.getByRole("link", { name: "E2E" }).click();
+  await page.getByRole("link", { name: "Settings" }).click();
+  await page.getByRole("link", { name: "Members" }).click();
+  await page.getByRole("link", { name: "New member" }).click();
+  await page.getByRole("checkbox", { name: "RA Redmine Admin" }).check();
+  await page.getByRole("checkbox", { name: "test" }).check();
+  await page.getByRole("button", { name: "Add" }).click();
+});
