@@ -136,6 +136,17 @@ async function loginAndGetApiKey(baseUrl: string): Promise<string> {
 }
 
 /**
+ * Create a new RedmineMCPServer instance for testing
+ * Uses dynamic import to ensure environment variables are loaded before config
+ *
+ * @returns Promise resolving to a new RedmineMCPServer instance
+ */
+async function createTestServerInstance() {
+  const { RedmineMCPServer } = await import("../../src/index.js");
+  return new RedmineMCPServer();
+}
+
+/**
  * Vitest test suite for Redmine MCP Server
  */
 describe("Redmine MCP Server E2E", () => {
@@ -159,15 +170,13 @@ describe("Redmine MCP Server E2E", () => {
   });
 
   it("should create MCP server instance successfully", async () => {
-    const { RedmineMCPServer } = await import("../../src/index.js");
-    const server = new RedmineMCPServer();
+    const server = await createTestServerInstance();
 
     expect(server).toBeDefined();
   });
 
   it("should get current user via MCP server method", async () => {
-    const { RedmineMCPServer } = await import("../../src/index.js");
-    const server = new RedmineMCPServer();
+    const server = await createTestServerInstance();
 
     // Call the getCurrentUser method directly
     const response = await server.getCurrentUser({});
@@ -189,5 +198,65 @@ describe("Redmine MCP Server E2E", () => {
     expect(userData.user).toHaveProperty("api_key");
     expect(userData.user.id).toBeGreaterThan(0);
     expect(userData.user.api_key).toEqual(apiKey);
+  });
+
+  it("should get admin user via get_users MCP method", async () => {
+    const server = await createTestServerInstance();
+
+    // Call the getUsers method to search for admin user
+    const response = await server.getUsers({ name: "admin" });
+
+    // Verify MCP response structure
+    expect(response).toHaveProperty("content");
+    expect(Array.isArray(response.content)).toBe(true);
+    expect(response.content.length).toBeGreaterThan(0);
+    expect(response.content[0]).toHaveProperty("type", "text");
+    expect(response.content[0]).toHaveProperty("text");
+
+    // Parse the JSON response
+    const usersData = JSON.parse(response.content[0]!.text);
+
+    // Assertions on the returned users data
+    expect(usersData).toHaveProperty("users");
+    expect(Array.isArray(usersData.users)).toBe(true);
+    expect(usersData.users.length).toBeGreaterThan(0);
+
+    // Find the admin user in the results
+    const adminUser = usersData.users.find((user: { login: string }) => user.login === "admin");
+    expect(adminUser).toBeDefined();
+    expect(adminUser).toHaveProperty("id");
+    expect(adminUser).toHaveProperty("login", "admin");
+    expect(adminUser).toHaveProperty("firstname");
+    expect(adminUser).toHaveProperty("lastname");
+    expect(adminUser.id).toBeGreaterThan(0);
+  });
+
+  it("should filter users by status via get_users MCP method", async () => {
+    const server = await createTestServerInstance();
+
+    // Call the getUsers method to get only active users (status = 1)
+    const response = await server.getUsers({ status: 1, limit: 10 });
+
+    // Verify MCP response structure
+    expect(response).toHaveProperty("content");
+    expect(Array.isArray(response.content)).toBe(true);
+    expect(response.content.length).toBeGreaterThan(0);
+    expect(response.content[0]).toHaveProperty("type", "text");
+    expect(response.content[0]).toHaveProperty("text");
+
+    // Parse the JSON response
+    const usersData = JSON.parse(response.content[0]!.text);
+
+    // Assertions on the returned users data
+    expect(usersData).toHaveProperty("users");
+    expect(Array.isArray(usersData.users)).toBe(true);
+
+    // All returned users should have status information
+    if (usersData.users.length > 0) {
+      const allActive = usersData.users.every(
+        (user: { status?: number }) => user.status === undefined || user.status === 1,
+      );
+      expect(allActive).toBe(true);
+    }
   });
 });

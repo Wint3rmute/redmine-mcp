@@ -17,6 +17,7 @@ import {
   type GetTimeActivitiesArgs,
   type LogTimeArgs,
   type GetCurrentUserArgs,
+  type GetUsersArgs,
   getIssuesSchemaShape,
   getProjectsSchemaShape,
   getIssueByIdSchemaShape,
@@ -26,6 +27,7 @@ import {
   getTimeActivitiesSchemaShape,
   logTimeSchemaShape,
   getCurrentUserSchemaShape,
+  getUsersSchemaShape,
 } from "./types/index.js";
 
 // Re-export utility types for documentation
@@ -152,6 +154,16 @@ export class RedmineMCPServer {
         inputSchema: getCurrentUserSchemaShape,
       },
       async (args: GetCurrentUserArgs) => await this.getCurrentUser(args),
+    );
+
+    this.server.registerTool(
+      "get_users",
+      {
+        title: "Get Users",
+        description: "Get a list of users with optional filtering. Requires admin privileges.",
+        inputSchema: getUsersSchemaShape,
+      },
+      async (args: GetUsersArgs) => await this.getUsers(args),
     );
 
     this.setupHandlers();
@@ -627,6 +639,44 @@ export class RedmineMCPServer {
     } catch (error) {
       console.error("Error fetching current user:", error);
       throw new Error(`Failed to fetch current user: ${error}`);
+    }
+  }
+
+  /**
+   * Retrieves a list of users with optional filtering
+   *
+   * This endpoint requires admin privileges in Redmine.
+   *
+   * @param args - Arguments for filtering users
+   * @param args.name - Filter users by login, firstname, lastname, or mail
+   * @param args.status - Filter by user status (1=active, 2=registered, 3=locked)
+   * @param args.group_id - Get only users who are members of the given group
+   * @param args.limit - Maximum number of users to return
+   * @returns Promise resolving to list of users
+   */
+  public async getUsers(
+    args: GetUsersArgs,
+  ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+    try {
+      const params: Record<string, string> = {};
+      if (args.name) params["name"] = args.name;
+      if (args.status !== undefined) params["status"] = args.status.toString();
+      if (args.group_id !== undefined) params["group_id"] = args.group_id.toString();
+      if (args.limit !== undefined) params["limit"] = args.limit.toString();
+
+      const data = await this.fetchRedmine("/users.json", { params });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(data, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      throw new Error(`Failed to fetch users: ${error}`);
     }
   }
 

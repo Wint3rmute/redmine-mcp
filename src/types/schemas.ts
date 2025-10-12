@@ -181,3 +181,18 @@ export const getCurrentUserSchemaShape = {
  * Type for get_current_user tool arguments, derived from Zod schema
  */
 export type GetCurrentUserArgs = z.infer<z.ZodObject<typeof getCurrentUserSchemaShape>>;
+
+/**
+ * Zod schema shape for get_users tool arguments
+ */
+export const getUsersSchemaShape = {
+  name: z.string().optional(),
+  status: z.number().optional(),
+  group_id: z.number().optional(),
+  limit: z.number().optional(),
+} as const;
+
+/**
+ * Type for get_users tool arguments, derived from Zod schema
+ */
+export type GetUsersArgs = z.infer<z.ZodObject<typeof getUsersSchemaShape>>;
