@@ -1,5 +1,8 @@
 # Redmine MCP Server
 
+[![Tests](https://github.com/Wint3rmute/redmine-mcp/actions/workflows/tests.yml/badge.svg)](https://github.com/Wint3rmute/redmine-mcp/actions/workflows/tests.yml)
+[![CI](https://github.com/Wint3rmute/redmine-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Wint3rmute/redmine-mcp/actions/workflows/ci.yml)
+
 A Model Context Protocol (MCP) server for integrating with Redmine project
 management systems. This server provides AI applications with the ability to
 interact with Redmine instances for project management, issue tracking, and time
@@ -128,7 +131,36 @@ npm run test:e2e
 
 # Run tests with UI
 npm run test:ui
+
+# Run tests with coverage
+npm run test:coverage
 ```
+
+#### Coverage Reporting
+
+Code coverage is automatically collected and reported in the CI pipeline using
+Vitest's built-in coverage support with the V8 provider. Coverage reports are:
+
+- Generated for every test run in CI
+- Uploaded as workflow artifacts (available for 30 days)
+- Displayed in the GitHub Actions workflow summary
+- Stored in the `coverage/` directory locally
+
+To generate coverage locally:
+
+```bash
+npm run test:coverage
+```
+
+Coverage reports include:
+
+- **HTML report**: Open `coverage/index.html` in your browser for detailed
+  line-by-line coverage
+- **JSON summary**: `coverage/coverage-summary.json` contains overall metrics
+- **Text output**: Coverage percentages displayed in the terminal
+
+The coverage configuration excludes test files, configuration files, and build
+artifacts to focus on source code coverage.
 
 #### Test Structure
 
