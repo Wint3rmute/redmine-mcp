@@ -374,7 +374,7 @@ export class RedmineMCPServer {
    * @param args.subject - Search text in issue subject/title
    * @returns Promise resolving to formatted issue data
    */
-  private async getIssues(
+  public async getIssues(
     args: GetIssuesArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
@@ -414,7 +414,7 @@ export class RedmineMCPServer {
    * @param args.issue_id - The ID of the issue to retrieve
    * @returns Promise resolving to formatted issue data
    */
-  private async getIssueById(
+  public async getIssueById(
     args: GetIssueByIdArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
@@ -442,7 +442,7 @@ export class RedmineMCPServer {
    * @param args.name - Search for projects containing this name (case-insensitive)
    * @returns Promise resolving to formatted project data with ID mappings
    */
-  private async getProjects(
+  public async getProjects(
     args: GetProjectsArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
@@ -495,7 +495,7 @@ export class RedmineMCPServer {
    * @param args.priority_id - Priority ID for the issue
    * @returns Promise resolving to created issue data
    */
-  private async createIssue(
+  public async createIssue(
     args: CreateIssueArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
@@ -546,7 +546,7 @@ export class RedmineMCPServer {
    * @param args.notes - Notes to add to the issue history
    * @returns Promise resolving to success confirmation
    */
-  private async updateIssue(
+  public async updateIssue(
     args: UpdateIssueArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
@@ -603,7 +603,7 @@ export class RedmineMCPServer {
    * @param args.limit - Maximum number of time entries to return
    * @returns Promise resolving to formatted time entries data
    */
-  private async getTimeEntries(
+  public async getTimeEntries(
     args: GetTimeEntriesArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
@@ -639,7 +639,7 @@ export class RedmineMCPServer {
    * @param args.project_id - Project ID to get project-specific activities (optional)
    * @returns Promise resolving to available time tracking activities
    */
-  private async getTimeActivities(
+  public async getTimeActivities(
     args: GetTimeActivitiesArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
@@ -708,7 +708,7 @@ export class RedmineMCPServer {
    * @param args.spent_on - Date when time was spent (YYYY-MM-DD format)
    * @returns Promise resolving to time entry creation confirmation
    */
-  private async logTime(
+  public async logTime(
     args: LogTimeArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
@@ -761,7 +761,7 @@ export class RedmineMCPServer {
    * @param args - Arguments for getting current user (optional include parameter)
    * @returns Promise resolving to current user information
    */
-  private async getCurrentUser(
+  public async getCurrentUser(
     args: GetCurrentUserArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
