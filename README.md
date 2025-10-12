@@ -166,7 +166,17 @@ artifacts to focus on source code coverage.
 
 #### Test Structure
 
-- `test/e2e/` - End-to-end tests using Docker and Playwright
+- `test/e2e/` - End-to-end tests using Docker (optimized with Rails console for fast setup)
+- `test/unit/` - Unit tests for individual components
+
+#### E2E Test Performance Optimizations
+
+The e2e tests have been optimized for speed by:
+
+- Using `docker exec` with Rails console instead of Playwright browser automation
+- Configuring Redmine directly via Ruby code (REST API enablement, role/project creation)
+- Eliminating browser overhead and UI interaction delays
+- This approach is **significantly faster** than traditional UI automation while maintaining test reliability
 
 #### Writing Tests
 
