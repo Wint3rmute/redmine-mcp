@@ -13,5 +13,18 @@ export default defineConfig({
       "**/.{idea,git,cache,output,temp}/**",
       "**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*",
     ],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "json", "html"],
+      reportsDirectory: "./coverage",
+      exclude: [
+        "**/node_modules/**",
+        "**/build/**",
+        "**/dist/**",
+        "**/test/**",
+        "**/*.config.*",
+        "**/.{idea,git,cache,output,temp}/**",
+      ],
+    },
   },
 });

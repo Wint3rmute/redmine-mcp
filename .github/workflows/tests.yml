@@ -28,5 +28,30 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run MCP server e2e tests
-        run: npm run test:e2e
+      - name: Run MCP server e2e tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
+
+      - name: Display coverage summary
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat coverage/coverage-summary.json | jq -r '
+              .total |
+              "| Metric | Coverage |",
+              "|--------|----------|",
+              "| Lines | \(.lines.pct)% |",
+              "| Statements | \(.statements.pct)% |",
+              "| Functions | \(.functions.pct)% |",
+              "| Branches | \(.branches.pct)% |"
+            ' >> $GITHUB_STEP_SUMMARY
+          fi
