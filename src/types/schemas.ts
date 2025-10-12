@@ -25,9 +25,10 @@ export type GetIssuesArgs = z.infer<z.ZodObject<typeof getIssuesSchemaShape>>;
 
 /**
  * Zod schema shape for get_projects tool arguments
+ *
+ * Note: This tool automatically fetches all projects using internal pagination.
  */
 export const getProjectsSchemaShape = {
-  limit: z.number().optional(),
   name: z.string().optional(),
 } as const;
 
@@ -171,7 +172,7 @@ export const logTimeSchemaShape = {
 export type LogTimeArgs = z.infer<z.ZodObject<typeof logTimeSchemaShape>>;
 
 /**
- * Zod schema shape for get_current_user tool arguments
+ * Zod schema shape for the get_current_user tool
  */
 export const getCurrentUserSchemaShape = {
   include: z.string().optional(),
@@ -181,3 +182,24 @@ export const getCurrentUserSchemaShape = {
  * Type for get_current_user tool arguments, derived from Zod schema
  */
 export type GetCurrentUserArgs = z.infer<z.ZodObject<typeof getCurrentUserSchemaShape>>;
+
+/**
+ * Zod schema shape for the get_project_memberships tool
+ *
+ * Retrieves users and groups assigned to a specific project with their roles.
+ * Supports pagination for projects with many members.
+ */
+export const getProjectMembershipsSchemaShape = {
+  project_id: z
+    .union([z.string(), z.number()])
+    .describe("The project ID (numeric) or project identifier (string)"),
+  limit: z.number().optional().describe("Maximum number of results to return (pagination)"),
+  offset: z.number().optional().describe("Number of results to skip (pagination)"),
+} as const;
+
+/**
+ * Type for get_project_memberships tool arguments, derived from Zod schema
+ */
+export type GetProjectMembershipsArgs = z.infer<
+  z.ZodObject<typeof getProjectMembershipsSchemaShape>
+>;

@@ -249,4 +249,71 @@ describe("Redmine MCP Server E2E", () => {
     expect(userData.user.id).toBeGreaterThan(0);
     expect(userData.user.api_key).toEqual(apiKey);
   });
+
+  it("should get project memberships by identifier", async () => {
+    // Call the getProjectMemberships method with project identifier
+    const response = await mcpServer.getProjectMemberships({
+      project_id: "e2e",
+    });
+
+    // Verify MCP response structure
+    expect(response).toHaveProperty("content");
+    expect(Array.isArray(response.content)).toBe(true);
+    expect(response.content.length).toBeGreaterThan(0);
+    expect(response.content[0]).toHaveProperty("type", "text");
+    expect(response.content[0]).toHaveProperty("text");
+
+    // Parse the JSON response
+    const membershipsData = JSON.parse(response.content[0]!.text);
+
+    // Assertions on the returned memberships data
+    expect(membershipsData).toHaveProperty("memberships");
+    expect(Array.isArray(membershipsData.memberships)).toBe(true);
+    expect(membershipsData.memberships.length).toBeGreaterThan(0);
+
+    // No pagination metadata expected in current implementation
+
+    // Verify membership structure
+    const firstMembership = membershipsData.memberships[0];
+    expect(firstMembership).toHaveProperty("id");
+    expect(firstMembership).toHaveProperty("project");
+    expect(firstMembership.project).toHaveProperty("id");
+    expect(firstMembership.project).toHaveProperty("name", "E2E");
+
+    // Verify user or group exists (at least one should be present)
+    expect(firstMembership.user || firstMembership.group).toBeDefined();
+
+    // Verify roles
+    expect(firstMembership).toHaveProperty("roles");
+    expect(Array.isArray(firstMembership.roles)).toBe(true);
+    expect(firstMembership.roles.length).toBeGreaterThan(0);
+
+    // Verify role structure
+    const firstRole = firstMembership.roles[0];
+    expect(firstRole).toHaveProperty("id");
+    expect(firstRole).toHaveProperty("name");
+
+    // Verify admin user is in the members (added during setup)
+    const adminMembership = membershipsData.memberships.find(
+      (m: { user?: { name: string } }) => m.user?.name === "Redmine Admin",
+    );
+    expect(adminMembership).toBeDefined();
+    expect(adminMembership.user.name).toBe("Redmine Admin");
+  });
+
+  it("should get project memberships with pagination", async () => {
+    // Call the getProjectMemberships method with limit
+    const response = await mcpServer.getProjectMemberships({
+      project_id: "e2e",
+      limit: 1,
+      offset: 0,
+    });
+
+    // Parse the JSON response
+    const membershipsData = JSON.parse(response.content[0]!.text);
+
+    // Only memberships array is returned; check its length
+    expect(Array.isArray(membershipsData.memberships)).toBe(true);
+    expect(membershipsData.memberships.length).toBeLessThanOrEqual(1);
+  });
 });

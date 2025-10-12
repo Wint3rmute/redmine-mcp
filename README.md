@@ -15,6 +15,8 @@ logging.
 - `get_issues` - Retrieve issues with optional filtering by project, status,
   assignee
 - `get_projects` - List available Redmine projects
+- `get_project_memberships` - Get users and groups assigned to a project with
+  their roles
 - `create_issue` - Create new issues in Redmine projects
 - `get_time_entries` - Retrieve time entries with filtering options
 - `log_time` - Log time spent on issues or projects

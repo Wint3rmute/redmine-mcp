@@ -6,7 +6,11 @@ import { config } from "./config/index.js";
 import { createRedmineClient } from "./utils/index.js";
 
 // Import types and schemas
-import type { RedmineProject } from "./types/index.js";
+import type {
+  RedmineProject,
+  RedmineMembership,
+  RedmineMembershipsResponse,
+} from "./types/index.js";
 import {
   type GetIssuesArgs,
   type GetProjectsArgs,
@@ -17,6 +21,7 @@ import {
   type GetTimeActivitiesArgs,
   type LogTimeArgs,
   type GetCurrentUserArgs,
+  type GetProjectMembershipsArgs,
   getIssuesSchemaShape,
   getProjectsSchemaShape,
   getIssueByIdSchemaShape,
@@ -26,6 +31,7 @@ import {
   getTimeActivitiesSchemaShape,
   logTimeSchemaShape,
   getCurrentUserSchemaShape,
+  getProjectMembershipsSchemaShape,
 } from "./types/index.js";
 
 // Re-export utility types for documentation
@@ -77,7 +83,8 @@ export class RedmineMCPServer {
       "get_projects",
       {
         title: "Get Projects",
-        description: "Get mapping of project names to their IDs from Redmine",
+        description:
+          "Get mapping of project names to their IDs from Redmine. Automatically fetches all projects using internal pagination. Supports optional case-insensitive name filtering.",
         inputSchema: getProjectsSchemaShape,
       },
       async (args: GetProjectsArgs) => await this.getProjects(args),
@@ -152,6 +159,17 @@ export class RedmineMCPServer {
         inputSchema: getCurrentUserSchemaShape,
       },
       async (args: GetCurrentUserArgs) => await this.getCurrentUser(args),
+    );
+
+    this.server.registerTool(
+      "get_project_memberships",
+      {
+        title: "Get Project Memberships",
+        description:
+          "Get users and groups assigned to a specific project with their roles. Supports pagination for projects with many members.",
+        inputSchema: getProjectMembershipsSchemaShape,
+      },
+      async (args: GetProjectMembershipsArgs) => await this.getProjectMemberships(args),
     );
 
     this.setupHandlers();
@@ -279,38 +297,50 @@ export class RedmineMCPServer {
   }
 
   /**
-   * Retrieves projects from Redmine with optional filtering
+   * Retrieves all projects from Redmine
    *
-   * @param args - Filter parameters for projects query
-   * @param args.limit - Maximum number of projects to return (default: 100)
-   * @param args.name - Search for projects containing this name (case-insensitive)
-   * @returns Promise resolving to formatted project data with ID mappings
+   * Automatically fetches all projects using internal pagination to ensure
+   * complete project list is returned. Supports optional case-insensitive name filtering.
+   *
+   * @param args - Optional filter arguments
+   * @param args.name - Optional case-insensitive substring to filter project names
+   * @returns Promise resolving to formatted project data with name-to-ID mappings
    */
   public async getProjects(
-    args: GetProjectsArgs,
+    args?: GetProjectsArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
-      const params: Record<string, string | number> = {};
-      if (args.limit) params["limit"] = args.limit;
-      if (args.name) params["name"] = args.name;
+      const allProjects: RedmineProject[] = [];
+      let offset = 0;
+      const limit = 100; // Fetch 100 projects per request for efficiency
+      let totalCount = 0;
 
-      const data = await this.fetchRedmine<{ projects: RedmineProject[] }>("/projects.json", {
-        params,
-      });
+      // Fetch all projects using pagination
+      do {
+        const data = await this.fetchRedmine<{
+          projects: RedmineProject[];
+          total_count: number;
+          offset: number;
+          limit: number;
+        }>(`/projects.json?limit=${limit}&offset=${offset}`);
 
-      let projects = data.projects || [];
+        allProjects.push(...(data.projects || []));
+        totalCount = data.total_count;
+        offset += limit;
+      } while (allProjects.length < totalCount);
 
-      // If name filter is provided and Redmine API doesn't support it, filter client-side
-      if (args.name && projects.length > 0) {
+      // Filter projects by name if provided (case-insensitive)
+      let filteredProjects = allProjects;
+      if (args?.name) {
         const searchTerm = args.name.toLowerCase();
-        projects = projects.filter((project: RedmineProject) =>
+        filteredProjects = allProjects.filter((project: RedmineProject) =>
           project.name.toLowerCase().includes(searchTerm),
         );
       }
 
       // Create mapping from project name to ID
       const projectMapping: { [key: string]: number } = {};
-      projects.forEach((project: RedmineProject) => {
+      filteredProjects.forEach((project: RedmineProject) => {
         projectMapping[project.name] = project.id;
       });
 
@@ -318,7 +348,15 @@ export class RedmineMCPServer {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify({ projects: projectMapping }, null, 2),
+            text: JSON.stringify(
+              {
+                projects: projectMapping,
+                total_count: filteredProjects.length,
+                total_available: totalCount,
+              },
+              null,
+              2,
+            ),
           },
         ],
       };
@@ -627,6 +665,63 @@ export class RedmineMCPServer {
     } catch (error) {
       console.error("Error fetching current user:", error);
       throw new Error(`Failed to fetch current user: ${error}`);
+    }
+  }
+
+  /**
+   * Get memberships (users and groups) for a specific project
+   *
+   * Retrieves all users and groups assigned to a project along with their roles.
+   * Supports pagination for projects with many members.
+   *
+   * @param args - Filter criteria including project_id (numeric or identifier), limit, offset
+   * @returns Promise resolving to MCP response with membership data
+   */
+  public async getProjectMemberships(
+    args: GetProjectMembershipsArgs,
+  ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+    try {
+      const allMemberships: RedmineMembership[] = [];
+      let offset = 0;
+      const limit = args.limit ?? 100; // Use provided limit or default to 100
+      let totalCount = 0;
+
+      do {
+        const params: Record<string, string> = {
+          limit: String(limit),
+          offset: String(offset),
+        };
+        const data = (await this.fetchRedmine(`/projects/${args.project_id}/memberships.json`, {
+          params,
+        })) as RedmineMembershipsResponse;
+
+        if (Array.isArray(data.memberships)) {
+          allMemberships.push(...data.memberships);
+        }
+        totalCount = data.total_count ?? allMemberships.length;
+        offset += limit;
+      } while (allMemberships.length < totalCount);
+
+      // Return all memberships in the same format as before
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                memberships: allMemberships,
+                total_count: allMemberships.length,
+                project_id: args.project_id,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      console.error("Error fetching project memberships:", error);
+      throw new Error(`Failed to fetch project memberships: ${error}`);
     }
   }
 
