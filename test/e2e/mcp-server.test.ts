@@ -35,6 +35,7 @@ function run(cmd: string): Promise<{ stdout: string; stderr: string }> {
 
 /**
  * Wait for Redmine server to be ready
+ * Uses exponential backoff for efficient polling
  *
  * @param url - The URL to check for readiness
  * @param timeoutMs - Maximum time to wait in milliseconds
@@ -42,22 +43,28 @@ function run(cmd: string): Promise<{ stdout: string; stderr: string }> {
  */
 async function waitForRedmine(url: string, timeoutMs = 60000): Promise<void> {
   const startTime = Date.now();
+  let attempt = 0;
   console.log(`Waiting for Redmine to be ready at ${url}...`);
 
   while (Date.now() - startTime < timeoutMs) {
     try {
       const response = await fetch(url);
       if (response.ok) {
-        console.log("Redmine is ready!");
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`Redmine is ready! (took ${elapsed}s, ${attempt + 1} attempts)`);
         return;
       }
     } catch {
       // Connection failed, retry
     }
-    await new Promise(r => setTimeout(r, 1000));
+
+    // Exponential backoff: 100ms, 200ms, 400ms, 800ms, 1000ms (max)
+    const delay = Math.min(100 * Math.pow(2, attempt), 1000);
+    await new Promise(r => setTimeout(r, delay));
+    attempt++;
   }
 
-  throw new Error(`Redmine did not become ready within ${timeoutMs}ms`);
+  throw new Error(`Redmine did not become ready within ${timeoutMs}ms after ${attempt} attempts`);
 }
 
 /**
@@ -71,9 +78,19 @@ async function startRedmineContainer() {
   const port = 3000;
 
   console.log("Starting Redmine container...");
+  
+  // Pull image first to avoid timeout during container startup
+  // This also provides better progress visibility in CI logs
+  try {
+    console.log(`Pulling ${image} if not cached...`);
+    await run(`docker pull ${image}`);
+  } catch (error) {
+    console.warn("Image pull failed, will try to use cached version:", error);
+  }
+  
   await run(`docker run -d --rm --name ${containerName} -p ${port}:3000 ${image}`);
   await waitForRedmine(`http://localhost:${port}`);
-  console.log("Redmine container started.");
+  console.log("Redmine container started and ready.");
   return containerName;
 }
 
