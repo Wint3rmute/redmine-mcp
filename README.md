@@ -153,7 +153,9 @@ npm run test:coverage
 ```
 
 Coverage reports include:
-- **HTML report**: Open `coverage/index.html` in your browser for detailed line-by-line coverage
+
+- **HTML report**: Open `coverage/index.html` in your browser for detailed
+  line-by-line coverage
 - **JSON summary**: `coverage/coverage-summary.json` contains overall metrics
 - **Text output**: Coverage percentages displayed in the terminal
 
