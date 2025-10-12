@@ -131,7 +131,13 @@ async function loginAndGetApiKey(page: Page, baseUrl: string): Promise<string> {
   return apiKey;
 }
 
-async function createRoleAndProject(page: Page) {
+/**
+ * Create a test role and project in Redmine using Playwright
+ *
+ * @param page - The Playwright page instance
+ * @returns Promise that resolves when role and project are created
+ */
+async function createRoleAndProject(page: Page): Promise<void> {
   console.log("Creating a role...");
   await page.goto("http://localhost:3000/roles/new");
   await page.getByRole("textbox", { name: "Name *" }).click();
@@ -178,6 +184,7 @@ describe("Redmine MCP Server E2E", () => {
   let apiKey = "";
   let browser: Browser;
   let page: Page;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mcpServer: any; // RedmineMCPServer - imported dynamically
   const baseUrl = "http://localhost:3000";
 
@@ -187,7 +194,7 @@ describe("Redmine MCP Server E2E", () => {
 
     // Setup: Launch Playwright browser
     console.log("Launching Playwright browser...");
-    browser = await chromium.launch({ headless: false });
+    browser = await chromium.launch({ headless: true });
     page = await browser.newPage();
 
     // Setup: Login and get API key
