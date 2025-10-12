@@ -6,6 +6,9 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 /**
  * End-to-end test for Redmine MCP Server
  * Tests the MCP server against a real Redmine instance running in Docker
+ *
+ * Note: Dynamic imports are used to allow setting environment variables
+ * before the config module is loaded.
  */
 
 /**
@@ -144,6 +147,8 @@ describe("Redmine MCP Server E2E", () => {
     // Setup: Start Redmine and get API key
     containerName = await startRedmineContainer();
     apiKey = await loginAndGetApiKey(baseUrl);
+    process.env["REDMINE_URL"] = baseUrl;
+    process.env["REDMINE_API_KEY"] = apiKey;
   }, 120000); // 2 minute timeout for container startup
 
   afterAll(async () => {
@@ -154,50 +159,30 @@ describe("Redmine MCP Server E2E", () => {
   });
 
   it("should create MCP server instance successfully", async () => {
-    // Set environment variables for MCP server
-    const originalUrl = process.env["REDMINE_URL"];
-    const originalKey = process.env["REDMINE_API_KEY"];
+    const { RedmineMCPServer } = await import("../../src/index.js");
+    const server = new RedmineMCPServer();
 
-    process.env["REDMINE_URL"] = baseUrl;
-    process.env["REDMINE_API_KEY"] = apiKey;
-
-    try {
-      // Dynamically import MCP server after environment variables are set
-      const { RedmineMCPServer } = await import("../../src/index.js");
-      const server = new RedmineMCPServer();
-
-      expect(server).toBeDefined();
-    } finally {
-      // Restore original environment variables
-      if (originalUrl !== undefined) {
-        process.env["REDMINE_URL"] = originalUrl;
-      } else {
-        delete process.env["REDMINE_URL"];
-      }
-
-      if (originalKey !== undefined) {
-        process.env["REDMINE_API_KEY"] = originalKey;
-      } else {
-        delete process.env["REDMINE_API_KEY"];
-      }
-    }
+    expect(server).toBeDefined();
   });
 
-  it("should get current user via Redmine API", async () => {
-    // Test get_current_user using the Redmine API directly
-    // Since we can't easily call MCP tools directly without the full protocol,
-    // we'll verify the API works by making a direct HTTP call
-    const response = await fetch(`${baseUrl}/users/current.json`, {
-      headers: {
-        "X-Redmine-API-Key": apiKey,
-      },
-    });
+  it("should get current user via MCP server method", async () => {
+    const { RedmineMCPServer } = await import("../../src/index.js");
+    const server = new RedmineMCPServer();
 
-    expect(response.ok).toBe(true);
+    // Call the getCurrentUser method directly
+    const response = await server.getCurrentUser({});
 
-    const userData = await response.json();
+    // Verify MCP response structure
+    expect(response).toHaveProperty("content");
+    expect(Array.isArray(response.content)).toBe(true);
+    expect(response.content.length).toBeGreaterThan(0);
+    expect(response.content[0]).toHaveProperty("type", "text");
+    expect(response.content[0]).toHaveProperty("text");
 
-    // Assertions using Vitest's expect API
+    // Parse the JSON response
+    const userData = JSON.parse(response.content[0]!.text);
+
+    // Assertions on the returned user data
     expect(userData).toHaveProperty("user");
     expect(userData.user).toHaveProperty("login", "admin");
     expect(userData.user).toHaveProperty("id");
