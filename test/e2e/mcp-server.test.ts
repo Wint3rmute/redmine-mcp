@@ -1,11 +1,15 @@
 // Import necessary modules
 import { exec } from "child_process";
-import { chromium, type Browser, type Page } from "playwright";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 /**
  * End-to-end test for Redmine MCP Server
  * Tests the MCP server against a real Redmine instance running in Docker
+ *
+ * Performance optimizations:
+ * - Uses docker exec with Rails console instead of Playwright UI automation
+ * - Configures Redmine directly via Ruby code (much faster)
+ * - Eliminates browser overhead and UI interaction delays
  *
  * Note: Dynamic imports are used to allow setting environment variables
  * before the config module is loaded.
@@ -86,95 +90,74 @@ async function stopRedmineContainer(containerName: string) {
 }
 
 /**
- * Login to Redmine and retrieve API key using Playwright
+ * Configure Redmine via Rails console using docker exec
+ * This is much faster than UI automation with Playwright
  *
- * @param page - The Playwright page instance
- * @param baseUrl - The base URL of the Redmine instance
+ * @param containerName - The name of the Redmine container
  * @returns Promise resolving to the API key
  */
-async function loginAndGetApiKey(page: Page, baseUrl: string): Promise<string> {
-  console.log("Logging in as admin using Playwright...");
+async function configureRedmineViaRails(containerName: string): Promise<string> {
+  console.log("Configuring Redmine via Rails console (faster than UI automation)...");
 
-  // Navigate to login page
-  console.log("Navigating to Redmine login page...");
-  await page.goto(`${baseUrl}/`);
-  await page.getByRole("link", { name: "Sign in" }).click();
-  await page.getByRole("textbox", { name: "Login" }).click();
-  await page.getByRole("textbox", { name: "Login" }).fill("admin");
-  await page.getByRole("textbox", { name: "Password Lost password" }).click();
-  await page.getByRole("textbox", { name: "Password Lost password" }).fill("admin");
-  console.log("Logging in with default admin credentials...");
-  await page.getByRole("button", { name: "Login" }).click();
-
-  console.log("Changing admin password...");
-  await page.getByRole("textbox", { name: "Current password *" }).click();
-  await page.getByRole("textbox", { name: "Current password *" }).fill("admin");
-  await page.getByRole("textbox", { name: "New password *" }).click();
-  await page.getByRole("textbox", { name: "New password *" }).fill("admin1234");
-  await page.getByRole("textbox", { name: "Confirmation *" }).click();
-  await page.getByRole("textbox", { name: "Confirmation *" }).fill("admin1234");
-  await page.getByRole("button", { name: "Apply" }).click();
-
+  // Enable REST API
   console.log("Enabling REST API access...");
-  await page.getByRole("link", { name: "Administration" }).click();
-  await page.getByRole("link", { name: "Settings" }).click();
-  await page.getByRole("link", { name: "API" }).click();
-  await page.getByRole("checkbox", { name: "Enable REST web service" }).check();
-  await page.getByRole("button", { name: "Save" }).click();
+  await run(
+    `docker exec ${containerName} rails runner "Setting.rest_api_enabled = '1'; Setting.save!" 2>&1 || true`
+  );
 
-  console.log("Retrieving API key...");
-  await page.goto(`${baseUrl}/my/api_key`);
-  const apiKey = await page.locator("#content > div.box > pre").innerText();
+  // Get admin user's API key
+  console.log("Retrieving admin API key...");
+  const { stdout: apiKeyOutput } = await run(
+    `docker exec ${containerName} rails runner "puts User.find_by_login('admin').api_key" 2>&1`
+  );
+  const apiKey = apiKeyOutput.trim().split('\n').pop()?.trim() || "";
+  
+  if (!apiKey || apiKey.length < 20) {
+    throw new Error(`Failed to retrieve valid API key. Got: ${apiKey}`);
+  }
+  
   console.log("Extracted API key:", apiKey);
 
-  await createRoleAndProject(page);
+  // Create test role via Rails console
+  console.log("Creating test role...");
+  await run(
+    `docker exec ${containerName} rails runner "
+      role = Role.find_or_create_by(name: 'test') do |r|
+        r.permissions = [:edit_project, :add_issues, :edit_own_issues, :copy_issues, 
+                         :edit_issues, :add_issue_notes, :manage_subtasks, :log_time,
+                         :edit_time_entries, :edit_own_time_entries, :view_time_entries,
+                         :manage_project_activities]
+        r.issues_visibility = 'all'
+      end
+      role.save!
+    " 2>&1 || true`
+  );
+
+  // Create test project via Rails console
+  console.log("Creating test project...");
+  await run(
+    `docker exec ${containerName} rails runner "
+      project = Project.find_or_create_by(identifier: 'e2e') do |p|
+        p.name = 'E2E'
+        p.is_public = false
+      end
+      project.save!
+      
+      # Add admin user to project with test role
+      admin = User.find_by_login('admin')
+      test_role = Role.find_by_name('test')
+      
+      member = Member.find_or_initialize_by(project: project, user: admin)
+      member.roles = [test_role]
+      member.save!
+    " 2>&1 || true`
+  );
+
+  console.log("Redmine configuration completed via Rails console.");
   return apiKey;
 }
 
-/**
- * Create a test role and project in Redmine using Playwright
- *
- * @param page - The Playwright page instance
- * @returns Promise that resolves when role and project are created
- */
-async function createRoleAndProject(page: Page): Promise<void> {
-  console.log("Creating a role...");
-  await page.goto("http://localhost:3000/roles/new");
-  await page.getByRole("textbox", { name: "Name *" }).click();
-  await page.getByRole("textbox", { name: "Name *" }).fill("test");
-  await page.getByRole("checkbox", { name: "Edit project" }).check();
-  await page.getByRole("checkbox", { name: "Add issues" }).check();
-  await page.getByRole("checkbox", { name: "Edit own issues" }).check();
-  await page.getByRole("checkbox", { name: "Copy issues" }).check();
-  await page.getByRole("checkbox", { name: "Edit issues" }).check();
-  await page.getByRole("checkbox", { name: "Add notes" }).check();
-  await page.getByRole("checkbox", { name: "Manage subtasks" }).check();
-  await page.getByRole("checkbox", { name: "Edit time logs" }).check();
-  await page.getByRole("checkbox", { name: "Log spent time", exact: true }).check();
-  await page.getByRole("checkbox", { name: "Edit own time logs" }).check();
-  await page.getByRole("checkbox", { name: "View spent time" }).check();
-  await page.getByRole("checkbox", { name: "Manage project activities" }).check();
-  await page.getByRole("button", { name: "Create" }).click();
-  await page.getByRole("link", { name: "test" }).click();
 
-  console.log("Creating a project...");
-  await page.locator("#top-menu").getByRole("link", { name: "Projects" }).click();
-  await page.getByRole("link", { name: "New project" }).click();
-  await page.getByRole("textbox", { name: "Name *" }).fill("E2E");
-  await page.getByRole("textbox", { name: "Identifier *" }).fill("e2e");
-  await page.getByRole("button", { name: "Create", exact: true }).click();
-
-  // await page.getByRole("link", { name: "Projects" }).click();
-  await page.goto("http://localhost:3000/projects");
-
-  await page.getByRole("link", { name: "E2E" }).click();
-  await page.getByRole("link", { name: "Settings" }).click();
-  await page.getByRole("link", { name: "Members" }).click();
-  await page.getByRole("link", { name: "New member" }).click();
-  await page.getByRole("checkbox", { name: "RA Redmine Admin" }).check();
-  await page.getByRole("checkbox", { name: "test" }).check();
-  await page.getByRole("button", { name: "Add" }).click();
-}
 
 /**
  * Vitest test suite for Redmine MCP Server
@@ -182,8 +165,6 @@ async function createRoleAndProject(page: Page): Promise<void> {
 describe("Redmine MCP Server E2E", () => {
   let containerName = "";
   let apiKey = "";
-  let browser: Browser;
-  let page: Page;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mcpServer: any; // RedmineMCPServer - imported dynamically
   const baseUrl = "http://localhost:3000";
@@ -192,13 +173,8 @@ describe("Redmine MCP Server E2E", () => {
     // Setup: Start Redmine container
     containerName = await startRedmineContainer();
 
-    // Setup: Launch Playwright browser
-    console.log("Launching Playwright browser...");
-    browser = await chromium.launch({ headless: true });
-    page = await browser.newPage();
-
-    // Setup: Login and get API key
-    apiKey = await loginAndGetApiKey(page, baseUrl);
+    // Setup: Configure Redmine and get API key (via Rails console - much faster than UI)
+    apiKey = await configureRedmineViaRails(containerName);
 
     // Setup: Set environment variables for MCP server
     process.env["REDMINE_URL"] = baseUrl;
@@ -211,12 +187,6 @@ describe("Redmine MCP Server E2E", () => {
   }, 120000); // 2 minute timeout for container startup
 
   afterAll(async () => {
-    // Cleanup: Close browser
-    if (browser) {
-      console.log("Closing Playwright browser...");
-      await browser.close();
-    }
-
     // Cleanup: Stop Redmine container
     if (containerName) {
       await stopRedmineContainer(containerName);
