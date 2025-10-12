@@ -5,3 +5,6 @@
 
 // Redmine domain types
 export type { RedmineProject } from "./redmine.js";
+
+// MCP tool schemas and argument types
+export * from "./schemas.js";
