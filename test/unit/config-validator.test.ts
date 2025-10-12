@@ -51,9 +51,7 @@ describe("ConfigValidator", () => {
         REDMINE_API_KEY: "test_api_key_123",
       };
 
-      expect(() => ConfigValidator.validate(envVars)).toThrow(
-        /Configuration validation failed/,
-      );
+      expect(() => ConfigValidator.validate(envVars)).toThrow(/Configuration validation failed/);
     });
 
     it("should throw error when REDMINE_API_KEY is missing", () => {
@@ -61,9 +59,7 @@ describe("ConfigValidator", () => {
         REDMINE_URL: "https://redmine.example.com",
       };
 
-      expect(() => ConfigValidator.validate(envVars)).toThrow(
-        /Configuration validation failed/,
-      );
+      expect(() => ConfigValidator.validate(envVars)).toThrow(/Configuration validation failed/);
     });
 
     it("should throw error when REDMINE_URL is empty string", () => {
@@ -72,9 +68,7 @@ describe("ConfigValidator", () => {
         REDMINE_API_KEY: "test_api_key_123",
       };
 
-      expect(() => ConfigValidator.validate(envVars)).toThrow(
-        /Configuration validation failed/,
-      );
+      expect(() => ConfigValidator.validate(envVars)).toThrow(/Configuration validation failed/);
     });
 
     it("should throw error when REDMINE_API_KEY is empty string", () => {
@@ -83,9 +77,7 @@ describe("ConfigValidator", () => {
         REDMINE_API_KEY: "",
       };
 
-      expect(() => ConfigValidator.validate(envVars)).toThrow(
-        /Configuration validation failed/,
-      );
+      expect(() => ConfigValidator.validate(envVars)).toThrow(/Configuration validation failed/);
     });
 
     it("should handle various valid URL formats", () => {
@@ -106,9 +98,7 @@ describe("ConfigValidator", () => {
         REDMINE_TIMEOUT: "not-a-number",
       };
 
-      expect(() => ConfigValidator.validate(envVars)).toThrow(
-        /Configuration validation failed/,
-      );
+      expect(() => ConfigValidator.validate(envVars)).toThrow(/Configuration validation failed/);
     });
 
     it("should throw error when timeout is negative", () => {
@@ -118,9 +108,7 @@ describe("ConfigValidator", () => {
         REDMINE_TIMEOUT: "-1000",
       };
 
-      expect(() => ConfigValidator.validate(envVars)).toThrow(
-        /Configuration validation failed/,
-      );
+      expect(() => ConfigValidator.validate(envVars)).toThrow(/Configuration validation failed/);
     });
   });
 });
