@@ -381,21 +381,17 @@ export class RedmineMCPServer {
     args: CreateIssueArgs,
   ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
     try {
-      if (!args.project_id || !args.subject) {
-        throw new Error("project_id and subject are required");
-      }
-
       const issueData: Record<string, string | number> = {
-        project_id: args.project_id,
+        project_id: parseInt(args.project_id, 10),
         subject: args.subject,
       };
 
-  if (args.description) issueData["description"] = args.description;
-  issueData["priority_id"] = args.priority_id ?? 2; // Default: Normal
-  issueData["tracker_id"] = args.tracker_id ?? 1; // Default: Bug
-  issueData["status_id"] = args.status_id ?? 1; // Default: New
-  if (args.assigned_to_id) issueData["assigned_to_id"] = args.assigned_to_id;
-  if (args.parent_issue_id) issueData["parent_issue_id"] = args.parent_issue_id;
+      if (args.description) issueData["description"] = args.description;
+      issueData["priority_id"] = args.priority_id ?? 2; // Default: Normal
+      issueData["tracker_id"] = args.tracker_id ?? 1; // Default: Bug
+      issueData["status_id"] = args.status_id ?? 1; // Default: New
+      if (args.assigned_to_id) issueData["assigned_to_id"] = args.assigned_to_id;
+      if (args.parent_issue_id) issueData["parent_issue_id"] = args.parent_issue_id;
 
       const data = await this.fetchRedmine("/issues.json", {
         method: "POST",
