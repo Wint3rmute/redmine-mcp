@@ -57,6 +57,7 @@ export const createIssueSchemaShape = {
   subject: z.string(),
   description: z.string().optional(),
   priority_id: z.number().optional(),
+  status_id: z.number().optional(),
   assigned_to_id: z.number().optional(),
   tracker_id: z.number().optional(),
   category_id: z.number().optional(),

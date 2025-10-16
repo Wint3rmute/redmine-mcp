@@ -390,9 +390,12 @@ export class RedmineMCPServer {
         subject: args.subject,
       };
 
-      if (args.description) issueData["description"] = args.description;
-      if (args.priority_id) issueData["priority_id"] = args.priority_id;
-      if (args.assigned_to_id) issueData["assigned_to_id"] = args.assigned_to_id;
+  if (args.description) issueData["description"] = args.description;
+  issueData["priority_id"] = args.priority_id ?? 2; // Default: Normal
+  issueData["tracker_id"] = args.tracker_id ?? 1; // Default: Bug
+  issueData["status_id"] = args.status_id ?? 1; // Default: New
+  if (args.assigned_to_id) issueData["assigned_to_id"] = args.assigned_to_id;
+  if (args.parent_issue_id) issueData["parent_issue_id"] = args.parent_issue_id;
 
       const data = await this.fetchRedmine("/issues.json", {
         method: "POST",

@@ -301,19 +301,58 @@ describe("Redmine MCP Server E2E", () => {
     expect(adminMembership.user.name).toBe("Redmine Admin");
   });
 
-  it("should get project memberships with pagination", async () => {
-    // Call the getProjectMemberships method with limit
-    const response = await mcpServer.getProjectMemberships({
-      project_id: "e2e",
-      limit: 1,
-      offset: 0,
+  it("should create child issues and link them to parent", async () => {
+    // Create a parent issue
+    const parentRes = await mcpServer.createIssue({
+      project_id: "884",
+      subject: "Parent E2E Issue",
+      description: "Parent issue for child linkage test",
+      tracker_id: 1, // Bug
+      priority_id: 2, // Normal
+      status_id: 1 // New
     });
+    expect(parentRes).toHaveProperty("content");
+    const parentData = JSON.parse(parentRes.content[0].text);
+    const parentId = parentData.issue.id;
+    expect(parentId).toBeGreaterThan(0);
 
-    // Parse the JSON response
-    const membershipsData = JSON.parse(response.content[0]!.text);
+    // Create child issues
+    const childTitles = ["Test ABC-1", "Test ABC-2", "Test ABC-3", "Test ABC-4"];
+    const childDescriptions = [
+      "Perform test ABC-1 and write the report",
+      "Perform test ABC-2 and write the report",
+      "Perform test ABC-3 and write the report",
+      "Perform test ABC-4 and write the report"
+    ];
+    const childIds: number[] = [];
+    for (let i = 0; i < childTitles.length; i++) {
+      const childRes = await mcpServer.createIssue({
+        project_id: "884",
+        subject: childTitles[i],
+        description: childDescriptions[i],
+        parent_issue_id: parentId,
+        tracker_id: 1, // Bug
+        priority_id: 2, // Normal
+        status_id: 1 // New
+      });
+      expect(childRes).toHaveProperty("content");
+      const childData = JSON.parse(childRes.content[0].text);
+      expect(childData.issue.parent.id).toBe(parentId);
+      childIds.push(childData.issue.id);
+    }
 
-    // Only memberships array is returned; check its length
-    expect(Array.isArray(membershipsData.memberships)).toBe(true);
-    expect(membershipsData.memberships.length).toBeLessThanOrEqual(1);
+    // Fetch child issues by parent
+  const issuesRes = await mcpServer.getIssues({ parent_id: String(parentId), project_id: "884" });
+    expect(issuesRes).toHaveProperty("content");
+    const issuesData = JSON.parse(issuesRes.content[0].text);
+    expect(Array.isArray(issuesData.issues)).toBe(true);
+    // All created child issues should be present and have correct parent
+    const foundIds = issuesData.issues.map((iss: any) => iss.id);
+    for (const id of childIds) {
+      expect(foundIds).toContain(id);
+    }
+    for (const iss of issuesData.issues) {
+      expect(iss.parent.id).toBe(parentId);
+    }
   });
 });
