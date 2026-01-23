@@ -84,6 +84,12 @@ contents:
 }
 ```
 
+After adding the file, **restart VsCode** and open the Chat window. Redmine MCP
+Server should be available and running in MCP servers list (`Ctrl-P`, then type
+*"MCP list servers"*):
+
+![LLM tools view with Redmine MCP visible](./screenshots/redmine_mcp_in_vscode_llm_tools.png)
+
 ## Documentation
 
 API documentation is automatically generated from JSDoc comments and deployed to
